@@ -128,7 +128,7 @@ class Model:
 		if self._is_training:
 			self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._global_batch_size, None], name='output_placeholder')
 			ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
-			losses = []
+			self._loss = 0
 
 		for gpu_idx in range(self._config.num_gpus):
 			with tf.device('/gpu:{}'.format(gpu_idx)), tf.variable_scope(
@@ -140,20 +140,21 @@ class Model:
 
 				logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_lengths[gpu_idx])
 				if self._is_training:
-					loss_i = self._add_loss(logits_i, ys[gpu_idx])
-					losses.append(loss_i)
+					loss_i = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=x_lengths[gpu_idx])
+					weight_i = tf.reduce_sum(x_lengths[gpu_idx]) / tf.reduce_sum(self._x_length)
+					self._loss += loss_i * weight_i
 
 		if self._is_training:
-			self._loss = 
 			self._add_train_op()
 
 	def _build_forward_pass_graph(self, x, x_length):
 		with tf.variable_scope('{}_layer'.format(self._config.cell_type)):
-			rnn_cell = create_rnn_cell(cell_type=self._config.cell_type,
-									num_units=self._config.num_units,
-									num_layers=self._config.num_layers,
-									dp_input_keep_prob=self._config.dropout,
-									dp_output_keep_prob=1.0)
+			rnn_cell = create_rnn_cell(
+				cell_type=self._config.cell_type,
+				num_units=self._config.num_units,
+				num_layers=self._config.num_layers,
+				dp_input_keep_prob=self._config.dropout,
+				dp_output_keep_prob=1.0)
 			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x, sequence_length=x_length, dtype=tf.float32)
 
 		with tf.variable_scope('output_layer'):
@@ -162,8 +163,19 @@ class Model:
 
 		return logits
 
-	def _add_loss(self, logits, labels):
-		pass
+	def _add_loss(self, logits, labels, lengths):
+		ts = tf.reduce_max(lengths)
+		logits = tf.slice(logits, begin=[0, 0, 0], size=[-1, ts, -1])
+		labels = tf.slice(labels, begin=[0, 0], size=[-1, ts])
+		mask = tf.sequence_mask(lengths=lengths, maxlen=ts, dtype=tf.float32)
+		loss = tf.contrib.seq2seq.sequence_loss(
+			logits=logits,
+			targets=labels,
+			weights=mask,
+			average_across_timesteps=True,
+			average_across_batch=True,
+			softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+		return loss
 	
 	def _add_train_op(self):
 		deco_print('Trainable Variables')

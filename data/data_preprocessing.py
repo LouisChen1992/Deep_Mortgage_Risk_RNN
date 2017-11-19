@@ -37,7 +37,7 @@ if args.dataset == 'subprime':
 			for file in os.listdir(path_i):
 				if file.startswith('X_data_np_int'):
 					X_int_list.append(file)
-				elif file.startswith('X_data_np.float'):
+				elif file.startswith('X_data_np_float'):
 					X_float_list.append(file)
 				elif file.startswith('outcome'):
 					outcome_list.append(file)

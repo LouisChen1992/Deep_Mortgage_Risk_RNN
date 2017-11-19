@@ -54,7 +54,7 @@ if args.dataset == 'subprime':
 				print(tValue)
 				print(loanID_list[idx_src])
 
-				loadID = np.load(os.path.join(path_i, loanID_list[idx_src]))
+				loanID = np.load(os.path.join(path_i, loanID_list[idx_src]))
 				loanID = loanID.reshape((-1, int(lValue)))[:,0]
 
 				X_float = np.load(os.path.join(path_i, X_float_list[idx_src]))
@@ -71,9 +71,9 @@ if args.dataset == 'subprime':
 				for i in range(len(loanID)):
 					idx = idx_tgt[i]
 
-					path_loanID = os.path.join(path_tgt, 'loadID_np_%d_%d.npy' %(bucket, idx))
+					path_loanID = os.path.join(path_tgt, 'loanID_np_%d_%d.npy' %(bucket, idx))
 					if os.path.exist(path_loanID):
-						loadID_new = np.load(path_loanID)
+						loanID_new = np.load(path_loanID)
 						loanID_new = np.append(loanID_new, [loanID[i]], axis=0)
 					else:
 						loanID_new = np.array([loanID[i]], dtype=loanID.dtype)

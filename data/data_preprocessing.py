@@ -72,7 +72,7 @@ if args.dataset == 'subprime':
 					idx = idx_tgt[i]
 
 					path_loanID = os.path.join(path_tgt, 'loanID_np_%d_%d.npy' %(bucket, idx))
-					if os.path.exist(path_loanID):
+					if os.path.exists(path_loanID):
 						loanID_new = np.load(path_loanID)
 						loanID_new = np.append(loanID_new, [loanID[i]], axis=0)
 					else:
@@ -81,7 +81,7 @@ if args.dataset == 'subprime':
 					loanID_new = None
 
 					path_X_int = os.path.join(path_tgt, 'X_data_np_int_%d_%d.npy' %(bucket, idx))
-					if os.path.exist(path_X_int):
+					if os.path.exists(path_X_int):
 						X_int_new = np.load(path_X_int)
 						X_int_new = np.append(X_int_new, [np.lib.pad(X_int[i], ((0, bucket-int(lValue)),(0,0)), 'constant')], axis=0)
 					else:
@@ -90,7 +90,7 @@ if args.dataset == 'subprime':
 					X_int_new = None
 
 					path_X_float = os.path.join(path_tgt, 'X_data_np_float_%d_%d.npy' %(bucket, idx))
-					if os.path.exist(path_X_float):
+					if os.path.exists(path_X_float):
 						X_float_new = np.load(path_X_float)
 						X_float_new = np.append(X_float_new, [np.lib.pad(X_float[i], ((0, bucket-int(lValue)),(0,0)), 'constant')], axis=0)
 					else:
@@ -99,7 +99,7 @@ if args.dataset == 'subprime':
 					X_float_new = None
 
 					path_outcome = os.path.join(path_tgt, 'outcome_data_np_%d_%d.npy' %(bucket, idx))
-					if os.path.exist(path_outcome):
+					if os.path.exists(path_outcome):
 						outcome_new = np.load(path_outcome)
 						outcome_new = np.append(outcome_new, [np.lib.pad(outcome[i], (0, bucket-int(lValue)), 'constant')], axis=0)
 					else:
@@ -108,7 +108,7 @@ if args.dataset == 'subprime':
 					outcome_new = None
 
 					path_tDimSplit = os.path.join(path_tgt, 'tDimSplit_np_%d_%d.npy' %(bucket, idx))
-					if os.path.exist(path_tDimSplit):
+					if os.path.exists(path_tDimSplit):
 						tDimSplit_new = np.load(path_tDimSplit)
 						tDimSplit_new = np.append(tDimSplit_new, [len_sep], axis=0)
 					else:

@@ -52,7 +52,7 @@ if args.dataset == 'subprime':
 			for idx_src in range(num_file):
 				print(lValue)
 				print(tValue)
-				print(loanID_list[src])
+				print(loanID_list[idx_src])
 
 				loadID = np.load(os.path.join(path_i, loanID_list[idx_src]))
 				loanID = loanID.reshape((-1, int(lValue)))[:,0]

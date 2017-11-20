@@ -5,6 +5,7 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='Generate random buckets. ')
 parser.add_argument('--dataset', help='prime/subprime/all')
+parser.add_argument('--bucket', help='50/100/150/200')
 args = parser.parse_args()
 
 def longitudinal_separation(lValue, tValue, sep=[121,281,287,306]):
@@ -24,12 +25,15 @@ if args.dataset == 'subprime':
 	###num of bucket [2800, 500, 120, 15]
 	###~4000 loan in each bucket
 	num_bucket = {50:2800, 100:500, 150:120, 200:15}
+	bucket_count = {50:11421062, 100:2122716, 150:494037, 200:61138}
 
 	count_subprime = 0
 	time_start = time.time()
 
 	for lValue in os.listdir(path_src):
 		bucket = (int(lValue) + 49) // 50 * 50
+		if bucket != int(args.bucket):
+			continue
 		for tValue in os.listdir(os.path.join(path_src,lValue)):
 			len_sep = longitudinal_separation(lValue=int(lValue), tValue=int(tValue))
 
@@ -117,8 +121,8 @@ if args.dataset == 'subprime':
 					np.save(path_tDimSplit, tDimSplit_new)
 					tDimSplit_new = None
 			time_elapse = time.time() - time_start
-			time_estimate = time_elapse / count_subprime * 14098953
-			print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(path_i, count_subprime, 14098953, time_elapse, time_estimate))
+			time_estimate = time_elapse / count_subprime * bucket_count[bucket]
+			print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(path_i, count_subprime, bucket_count[bucket], time_elapse, time_estimate))
 
 elif args.dataset == 'prime':
 	raise ValueError('Not Implemented!')

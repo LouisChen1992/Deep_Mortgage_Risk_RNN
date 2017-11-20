@@ -37,10 +37,6 @@ if args.dataset == 'subprime':
 
 	for lValue in os.listdir(path_src):
 		bucket = decide_bucket(int(lValue), sorted(list(num_bucket.keys())))
-		print(lValue)
-		print(bucket)
-		input()
-		continue
 		if bucket != int(args.bucket):
 			continue
 		for tValue in os.listdir(os.path.join(path_src,lValue)):

@@ -113,6 +113,7 @@ if args.dataset == 'subprime':
 						tDimSplit_new = np.array([len_sep], dtype=len_sep.dtype)
 					np.save(path_tDimSplit, tDimSplit_new)
 					tDimSplit_new = None
+			print('%s Completed! ' %path_i)
 
 elif args.dataset == 'prime':
 	raise ValueError('Not Implemented!')

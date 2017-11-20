@@ -5,7 +5,7 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='Generate random buckets. ')
 parser.add_argument('--dataset', help='prime/subprime/all')
-parser.add_argument('--bucket', help='50/100/150/200')
+parser.add_argument('--bucket', help='50/75/100/150/200')
 args = parser.parse_args()
 
 def longitudinal_separation(lValue, tValue, sep=[121,281,287,306]):
@@ -15,23 +15,32 @@ def longitudinal_separation(lValue, tValue, sep=[121,281,287,306]):
 	len_test = min(max(tValue+lValue-sep[2],0),lValue)
 	return np.array([len_train,len_valid,len_test], dtype='int16')
 
+def decide_bucket(lValue, buckets):
+	for bucket in buckets:
+		if lValue <= bucket:
+			return bucket
+
 path = os.path.expanduser('~')
 
 if args.dataset == 'subprime':
 	path_subprime = os.path.join(path, 'data/RNNdata')
 	path_src = os.path.join(path_subprime, 'subprime')
 	path_tgt = os.path.join(path_subprime, 'subprime_new')
-	###use bucket size [50, 100, 150, 200]
-	###num of bucket [2800, 500, 120, 15]
+	###use bucket size [50, 75, 100, 150, 200]
+	###num of bucket [2800, 290, 210, 120, 15]
 	###~4000 loan in each bucket
-	num_bucket = {50:2800, 100:500, 150:120, 200:15}
-	bucket_count = {50:11421062, 100:2122716, 150:494037, 200:61138}
+	num_bucket = {50:2800, 75:290, 100:210, 150:120, 200:15}
+	bucket_count = {50:11421062, 75:1222169, 100:900547, 150:494037, 200:61138}
 
 	count_subprime = 0
 	time_start = time.time()
 
 	for lValue in os.listdir(path_src):
-		bucket = (int(lValue) + 49) // 50 * 50
+		bucket = decide_bucket(int(lValue), sorted(list(num_bucket.keys())))
+		print(lValue)
+		print(bucket)
+		input()
+		continue
 		if bucket != int(args.bucket):
 			continue
 		for tValue in os.listdir(os.path.join(path_src,lValue)):

@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 import numpy as np
 
 parser = argparse.ArgumentParser(description='Generate random buckets. ')
@@ -23,6 +24,9 @@ if args.dataset == 'subprime':
 	###num of bucket [2800, 500, 120, 15]
 	###~4000 loan in each bucket
 	num_bucket = {50:2800, 100:500, 150:120, 200:15}
+
+	count_subprime = 0
+	time_start = time.time()
 
 	for lValue in os.listdir(path_src):
 		bucket = (int(lValue) + 49) // 50 * 50
@@ -50,8 +54,6 @@ if args.dataset == 'subprime':
 			num_file = len(loanID_list)
 
 			for idx_src in range(num_file):
-				if idx_src % 10 == 0:
-					print('Processing files in %s: %d / %d' %(path_i, idx_src, num_file), end='\r')
 				loanID = np.load(os.path.join(path_i, loanID_list[idx_src]))
 				loanID = loanID.reshape((-1, int(lValue)))[:,0]
 
@@ -65,6 +67,7 @@ if args.dataset == 'subprime':
 				outcome = outcome.reshape((-1, int(lValue)))
 
 				idx_tgt = np.random.choice(num_bucket[bucket], len(loanID))
+				count_subprime += len(loanID)
 
 				for i in range(len(loanID)):
 					idx = idx_tgt[i]
@@ -113,7 +116,9 @@ if args.dataset == 'subprime':
 						tDimSplit_new = np.array([len_sep], dtype=len_sep.dtype)
 					np.save(path_tDimSplit, tDimSplit_new)
 					tDimSplit_new = None
-			print('%s Completed! ' %path_i)
+			time_elaspe = time.time() - time_start
+			time_estimate = time_elapse / count_subprime * 14098953
+			print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(path_i, count_subprime, 14098953, time_elapse, time_estimate))
 
 elif args.dataset == 'prime':
 	raise ValueError('Not Implemented!')

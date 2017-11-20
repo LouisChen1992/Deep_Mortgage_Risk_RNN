@@ -116,7 +116,7 @@ if args.dataset == 'subprime':
 						tDimSplit_new = np.array([len_sep], dtype=len_sep.dtype)
 					np.save(path_tDimSplit, tDimSplit_new)
 					tDimSplit_new = None
-			time_elaspe = time.time() - time_start
+			time_elapse = time.time() - time_start
 			time_estimate = time_elapse / count_subprime * 14098953
 			print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(path_i, count_subprime, 14098953, time_elapse, time_estimate))
 

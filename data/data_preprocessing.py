@@ -24,13 +24,9 @@ if args.dataset == 'subprime':
 	###~4000 loan in each bucket
 	num_bucket = {50:2800, 100:500, 150:120, 200:15}
 
-	ii = 0
 	for lValue in os.listdir(path_src):
-		ii += 1
-		jj = 0
 		bucket = (int(lValue) + 49) // 50 * 50
 		for tValue in os.listdir(os.path.join(path_src,lValue)):
-			jj += 1
 			len_sep = longitudinal_separation(lValue=int(lValue), tValue=int(tValue))
 
 			path_i = os.path.join(path_src, lValue, tValue)
@@ -54,10 +50,8 @@ if args.dataset == 'subprime':
 			num_file = len(loanID_list)
 
 			for idx_src in range(num_file):
-				print(lValue)
-				print(tValue)
-				print(loanID_list[idx_src])
-
+				if idx_src % 10 == 0:
+					print('Processing files in %s: %d / %d' %(path_i, idx_src, num_file), end='\r')
 				loanID = np.load(os.path.join(path_i, loanID_list[idx_src]))
 				loanID = loanID.reshape((-1, int(lValue)))[:,0]
 
@@ -119,13 +113,6 @@ if args.dataset == 'subprime':
 						tDimSplit_new = np.array([len_sep], dtype=len_sep.dtype)
 					np.save(path_tDimSplit, tDimSplit_new)
 					tDimSplit_new = None
-
-				if idx_src == 2:
-					break
-			if jj == 2:
-				break
-		if ii == 2:
-			break
 
 elif args.dataset == 'prime':
 	raise ValueError('Not Implemented!')

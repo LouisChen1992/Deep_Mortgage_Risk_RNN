@@ -343,7 +343,7 @@ elif args.dataset == 'prime':
 				break
 				###
 
-		print('Finished loading data with lValue %d!                    ' %lValue)
+		print('Finished loading data with lValue %d!                               ' %lValue)
 
 		count_prime += len(loanID_lValue)
 		idx_tgt = np.random.choice(num_bucket[bucket], len(loanID_lValue))
@@ -397,8 +397,8 @@ elif args.dataset == 'prime':
 			tDimSplit_new = None
 
 		time_elapse = time.time() - time_start
-		time_estimate = time_elapse / count_subprime * bucket_count[bucket]
-		print('Finished data with lValue %d! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(lValue, count_subprime, bucket_count[bucket], time_elapse, time_estimate))
+		time_estimate = time_elapse / count_prime * bucket_count[bucket]
+		print('Finished data with lValue %d! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(lValue, count_prime, bucket_count[bucket], time_elapse, time_estimate))
 
 elif args.dataset == 'all':
 	raise ValueError('Not Implemented!')

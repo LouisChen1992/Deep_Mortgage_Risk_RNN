@@ -207,6 +207,9 @@ elif args.dataset == 'prime':
 
 				tDimSplit_lValue = np.append(tDimSplit_lValue, np.tile(len_sep, (len(loanID),1)), axis=0)
 			print('Finished loading %s! ' %path_i, end='\r')
+			#####
+			break
+			#####
 
 		print('Finished loading data! ')
 		count_subprime += len(loanID_lValue)
@@ -263,6 +266,9 @@ elif args.dataset == 'prime':
 		time_elapse = time.time() - time_start
 		time_estimate = time_elapse / count_subprime * bucket_count[bucket]
 		print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(lValue, count_subprime, bucket_count[bucket], time_elapse, time_estimate))
+		#####
+		break
+		#####
 
 elif args.dataset == 'all':
 	raise ValueError('Not Implemented!')

@@ -128,7 +128,7 @@ if args.dataset == 'subprime':
 	# 		time_elapse = time.time() - time_start
 	# 		time_estimate = time_elapse / count_subprime * bucket_count[bucket]
 	# 		print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(path_i, count_subprime, bucket_count[bucket], time_elapse, time_estimate))
-
+	raise ValueError('Not Implemented!')
 elif args.dataset == 'prime':
 	path_subprime = os.path.join(path, 'data/RNNdata')
 	path_src = os.path.join(path_subprime, 'subprime')

@@ -333,18 +333,9 @@ elif args.dataset == 'prime':
 
 					tDimSplit_lValue = np.append(tDimSplit_lValue, np.tile(len_sep, (len(loanID),1)), axis=0)
 
-					###
-					break
-					###
-
 				print('Finished loading %s! ' %path_i, end='\r')
 
-				###
-				break
-				###
-
 		print('Finished loading data with lValue %d!                               ' %lValue)
-
 		count_prime += len(loanID_lValue)
 		idx_tgt = np.random.choice(num_bucket[bucket], len(loanID_lValue))
 

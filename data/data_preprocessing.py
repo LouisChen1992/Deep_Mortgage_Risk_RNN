@@ -132,7 +132,7 @@ if args.dataset == 'subprime':
 elif args.dataset == 'prime':
 	path_subprime = os.path.join(path, 'data/RNNdata')
 	path_src = os.path.join(path_subprime, 'subprime')
-	path_tgt = os.path.join(path_subprime, 'subprime_new_test')
+	path_tgt = os.path.join(path_subprime, 'subprime_new_50')
 	###use bucket size [50, 75, 100, 150, 200]
 	###num of bucket [2800, 290, 210, 120, 15]
 	###~4000 loan in each bucket
@@ -146,6 +146,16 @@ elif args.dataset == 'prime':
 		bucket = decide_bucket(int(lValue), sorted(list(num_bucket.keys())))
 		if bucket != int(args.bucket):
 			continue
+
+		###
+		loanID_lValue = np.empty((0,), dtype='S8')
+		X_int_lValue = np.empty((0, int(lValue), 239), dtype='int8')
+		X_float_lValue = np.empty((0, int(lValue), 54), dtype='float32')
+		outcome_lValue = np.empty((0, int(lValue)), dtype='int64')
+		tDimSplit_lValue = np.empty((0, 3), dtype='int16')
+		###
+
+		print('Processing data in folder %s' %lValue)
 
 		for tValue in os.listdir(os.path.join(path_src,lValue)):
 			len_sep = longitudinal_separation(lValue=int(lValue), tValue=int(tValue))
@@ -169,14 +179,6 @@ elif args.dataset == 'prime':
 			outcome_list = sorted(outcome_list)
 			loanID_list = sorted(loanID_list)
 			num_file = len(loanID_list)
-
-			###
-			loanID_lValue = np.empty((0,), dtype='S8')
-			X_float_lValue = np.empty((0, int(lValue), 54), dtype='float32')
-			X_int_lValue = np.empty((0, int(lValue), 239), dtype='int8')
-			outcome_lValue = np.empty((0, int(lValue)), dtype='int64')
-			tDimSplit_lValue = np.empty((0, 3), dtype='int16')
-			###
 
 			for idx_src in range(num_file):
 				loanID = np.load(os.path.join(path_i, loanID_list[idx_src]))
@@ -203,60 +205,64 @@ elif args.dataset == 'prime':
 				outcome_lValue = np.append(outcome_lValue, outcome, axis=0)
 				###
 
-			tDimSplit_lValue = np.append(tDimSplit_lValue, np.tile(len_sep, (len(loanID_lValue),1)), axis=0)
-			count_subprime += len(loanID_lValue)
-			idx_tgt = np.random.choice(num_bucket[bucket], len(loanID_lValue))
+				tDimSplit_lValue = np.append(tDimSplit_lValue, np.tile(len_sep, (len(loanID),1)), axis=0)
+			print('Finished loading %s! ' %path_i, end='\r')
 
-			for idx in range(num_bucket[bucket]):
+		print('Finished loading data! ')
+		count_subprime += len(loanID_lValue)
+		idx_tgt = np.random.choice(num_bucket[bucket], len(loanID_lValue))
 
-				path_loanID = os.path.join(path_tgt, 'loanID_np_%d_%d.npy' %(bucket, idx))
-				if os.path.exists(path_loanID):
-					loanID_new = np.load(path_loanID)
-				else:
-					loanID_new = np.empty((0,), dtype='S8')
-				loanID_new = np.append(loanID_new, loanID_lValue[idx_tgt==idx], axis=0)
-				np.save(path_loanID, loanID_new)
-				loanID_new = None
+		for idx in range(num_bucket[bucket]):
+			print('Writing to bucket %d...' %idx, end='\r')
 
-				path_X_int = os.path.join(path_tgt, 'X_data_np_int_%d_%d.npy' %(bucket, idx))
-				if os.path.exists(path_X_int):
-					X_int_new = np.load(path_X_int)
-				else:
-					X_int_new = np.empty((0, bucket, 239), dtype='int8')
-				X_int_new = np.append(X_int_new, np.lib.pad(X_int_lValue[idx_tgt==idx], ((0,0),(0, bucket-int(lValue)),(0,0)), 'constant'), axis=0)
-				np.save(path_X_int, X_int_new)
-				X_int_new = None
+			path_loanID = os.path.join(path_tgt, 'loanID_np_%d_%d.npy' %(bucket, idx))
+			if os.path.exists(path_loanID):
+				loanID_new = np.load(path_loanID)
+			else:
+				loanID_new = np.empty((0,), dtype='S8')
+			loanID_new = np.append(loanID_new, loanID_lValue[idx_tgt==idx], axis=0)
+			np.save(path_loanID, loanID_new)
+			loanID_new = None
 
-				path_X_float = os.path.join(path_tgt, 'X_data_np_float_%d_%d.npy' %(bucket, idx))
-				if os.path.exists(path_X_float):
-					X_float_new = np.load(path_X_float)
-				else:
-					X_float_new = np.empty((0, bucket, 54), dtype='float32')
-				X_float_new = np.append(X_float_new, np.lib.pad(X_float_lValue[idx_tgt==idx], ((0,0),(0, bucket-int(lValue)),(0,0)), 'constant'), axis=0)
-				np.save(path_X_float, X_float_new)
-				X_float_new = None
+			path_X_int = os.path.join(path_tgt, 'X_data_np_int_%d_%d.npy' %(bucket, idx))
+			if os.path.exists(path_X_int):
+				X_int_new = np.load(path_X_int)
+			else:
+				X_int_new = np.empty((0, bucket, 239), dtype='int8')
+			X_int_new = np.append(X_int_new, np.lib.pad(X_int_lValue[idx_tgt==idx], ((0,0),(0, bucket-int(lValue)),(0,0)), 'constant'), axis=0)
+			np.save(path_X_int, X_int_new)
+			X_int_new = None
 
-				path_outcome = os.path.join(path_tgt, 'outcome_data_np_%d_%d.npy' %(bucket, idx))
-				if os.path.exists(path_outcome):
-					outcome_new = np.load(path_outcome)
-				else:
-					outcome_new = np.empty((0, bucket), dtype='int64')
-				outcome_new = np.append(outcome_new, np.lib.pad(outcome_lValue[idx_tgt==idx], ((0,0),(0, bucket-int(lValue))), 'constant'), axis=0)
-				np.save(path_outcome, outcome_new)
-				outcome_new = None
+			path_X_float = os.path.join(path_tgt, 'X_data_np_float_%d_%d.npy' %(bucket, idx))
+			if os.path.exists(path_X_float):
+				X_float_new = np.load(path_X_float)
+			else:
+				X_float_new = np.empty((0, bucket, 54), dtype='float32')
+			X_float_new = np.append(X_float_new, np.lib.pad(X_float_lValue[idx_tgt==idx], ((0,0),(0, bucket-int(lValue)),(0,0)), 'constant'), axis=0)
+			np.save(path_X_float, X_float_new)
+			X_float_new = None
 
-				path_tDimSplit = os.path.join(path_tgt, 'tDimSplit_np_%d_%d.npy' %(bucket, idx))
-				if os.path.exists(path_tDimSplit):
-					tDimSplit_new = np.load(path_tDimSplit)
-				else:
-					tDimSplit_new = np.empty((0,3), dtype='int16')
-				tDimSplit_new = np.append(tDimSplit_new, tDimSplit_lValue[idx_tgt==idx], axis=0)
-				np.save(path_tDimSplit, tDimSplit_new)
-				tDimSplit_new = None
+			path_outcome = os.path.join(path_tgt, 'outcome_data_np_%d_%d.npy' %(bucket, idx))
+			if os.path.exists(path_outcome):
+				outcome_new = np.load(path_outcome)
+			else:
+				outcome_new = np.empty((0, bucket), dtype='int64')
+			outcome_new = np.append(outcome_new, np.lib.pad(outcome_lValue[idx_tgt==idx], ((0,0),(0, bucket-int(lValue))), 'constant'), axis=0)
+			np.save(path_outcome, outcome_new)
+			outcome_new = None
 
-			time_elapse = time.time() - time_start
-			time_estimate = time_elapse / count_subprime * bucket_count[bucket]
-			print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(path_i, count_subprime, bucket_count[bucket], time_elapse, time_estimate))
+			path_tDimSplit = os.path.join(path_tgt, 'tDimSplit_np_%d_%d.npy' %(bucket, idx))
+			if os.path.exists(path_tDimSplit):
+				tDimSplit_new = np.load(path_tDimSplit)
+			else:
+				tDimSplit_new = np.empty((0,3), dtype='int16')
+			tDimSplit_new = np.append(tDimSplit_new, tDimSplit_lValue[idx_tgt==idx], axis=0)
+			np.save(path_tDimSplit, tDimSplit_new)
+			tDimSplit_new = None
+
+		time_elapse = time.time() - time_start
+		time_estimate = time_elapse / count_subprime * bucket_count[bucket]
+		print('%s Completed! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(lValue, count_subprime, bucket_count[bucket], time_elapse, time_estimate))
 
 elif args.dataset == 'all':
 	raise ValueError('Not Implemented!')

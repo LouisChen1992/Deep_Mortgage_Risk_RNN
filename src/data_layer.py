@@ -64,9 +64,9 @@ class DataInRamInputLayer():
 		for file in loanID_list:
 			self._bucket_loanID[file.split('_')[2]].append(file)
 		for file in X_int_list:
-			self._bucket_X_int[file.split('_')[3]].append(file)
+			self._bucket_X_int[file.split('_')[4]].append(file)
 		for file in X_float_list:
-			self._bucket_X_float[file.split('_')[3]].append(file)
+			self._bucket_X_float[file.split('_')[4]].append(file)
 		for file in outcome_list:
 			self._bucket_outcome[file.split('_')[3]].append(file)
 		for file in tDimSplit_list:

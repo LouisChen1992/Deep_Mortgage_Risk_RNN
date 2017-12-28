@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
 from tensorflow.python.ops.rnn_cell import LSTMCell, GRUCell, DropoutWrapper, MultiRNNCell
-from utils import deco_print
+from .utils import deco_print
 
 def create_rnn_cell(cell_type,
 					num_units,

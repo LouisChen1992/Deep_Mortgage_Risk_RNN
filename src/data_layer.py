@@ -1,6 +1,8 @@
 import os
+import copy
 import json
 import numpy as np
+from .utils import weighted_choice
 
 class DataInRamInputLayer():
 	def __init__(self, path, shuffle=False, load_file_list=True):
@@ -79,4 +81,47 @@ class DataInRamInputLayer():
 			self._bucket_outcome[bucket] = sorted(self._bucket_outcome[bucket])
 			self._bucket_tDimSplit[bucket] = sorted(self._bucket_tDimSplit[bucket])
 
-		self._bucket_count = {bucket:len(self._bucket_loanID[bucket]) for bucket in self._bucket_loanID.keys()}
+		self._bucket_count = {bucket:len(self._bucket_loanID[bucket]) for bucket in self._buckets}
+		self._bucket_outseq = {bucket:np.arange(self._bucket_count[bucket]) for bucket in self._buckets}
+
+	def iterate_one_epoch(self, batch_size):
+		if self._shuffle:
+			for bucket in self._buckets:
+				np.random.shuffle(self._bucket_outseq[bucket])
+
+		bucket_idx = {bucket:0 for bucket in self._buckets}
+		bucket_count_left = copy.deepcopy(self._bucket_count)
+
+		bucket = weighted_choice(bucket_count_left, self._buckets)
+		while bucket is not None:
+			idx_file = self._bucket_outseq[bucket][bucket_idx[bucket]]
+			X_int = np.load(os.path.join(self._path, self._bucket_X_int[bucket][idx_file]))
+			X_float = np.load(os.path.join(self._path, self._bucket_X_float[bucket][idx_file]))
+			outcome = np.load(os.path.join(self._path, self._bucket_outcome[bucket][idx_file]))
+			tDimSplit = np.load(os.path.join(self._path, self._bucket_tDimSplit[bucket][idx_file]))
+
+			num_example = X_int.shape[0]
+			num_batch = num_example // batch_size
+			idx_example = np.arange(num_example)
+			if self._shuffle:
+				np.random.shuffle(idx_example)
+
+			for idx_batch in range(num_batch):
+				idx_input = idx_example[idx_batch*batch_size:(idx_batch+1)*batch_size]
+				X_int_input = X_int[idx_input]
+				X_float_input = X_float[idx_input]
+				X_input = np.concatenate((X_int_input[:,:,:-2], X_float_input), axis=2) # remove last two integer feature
+				Y_input = outcome[idx_input]
+				tDimSplit_input = tDimSplit[idx_input]
+				yield X_input, Y_input, tDimSplit_input
+
+			###
+			print(bucket)
+			print(bucket_idx)
+			print(bucket_count_left)
+			input()
+			###
+
+			bucket_count_left[bucket] -= 1
+			bucket_idx[bucket] += 1
+			bucket = weighted_choice(bucket_count_left, self._buckets)

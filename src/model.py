@@ -211,23 +211,23 @@ class Model:
 			else:
 				mask_train = tf.sequence_mask(lengths=x_length, maxlen=ts, dtype=tf.float32)
 
-			loss_sum_train = tf.contrib.seq2seq.sequence_loss(
+			loss_sum_train = tf.reduce_sum(tf.contrib.seq2seq.sequence_loss(
 				logits=logits,
 				targets=labels,
 				weights=mask_train,
 				average_across_timesteps=False,
 				average_across_batch=False,
-				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
 			num_train = tf.reduce_sum(mask_train)
 
 			if self._use_valid_set:
-				loss_sum_valid = tf.contrib.seq2seq.sequence_loss(
+				loss_sum_valid = tf.reduce_sum(tf.contrib.seq2seq.sequence_loss(
 					logits=logits,
 					targets=labels,
 					weights=mask_valid,
 					average_across_timesteps=False,
 					average_across_batch=False,
-					softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+					softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
 				num_valid = tf.reduce_sum(mask_valid)
 				return loss_sum_train, num_train, loss_sum_valid, num_valid
 			else:
@@ -244,13 +244,13 @@ class Model:
 			mask_part = tf.sequence_mask(lengths=x_length_part, maxlen=ts, dtype=tf.float32)
 			mask_test = mask - mask_part
 
-			loss_sum = tf.contrib.seq2seq.sequence_loss(
+			loss_sum = tf.reduce_sum(tf.contrib.seq2seq.sequence_loss(
 				logits=logits,
 				targets=labels,
 				weights=mask_test,
 				average_across_timesteps=False,
 				average_across_batch=False,
-				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
 			num = tf.reduce_sum(mask_test)
 			return loss_sum, num
 

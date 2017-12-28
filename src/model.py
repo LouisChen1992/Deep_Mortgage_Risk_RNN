@@ -171,6 +171,9 @@ class Model:
 
 		self._loss = loss / num # training or test loss
 
+		print(self._loss)
+		gdgd
+
 		if self._is_training:
 			self._add_train_op()
 			if self._use_valid_set:
@@ -267,7 +270,7 @@ class Model:
 	def _add_train_op(self):
 		deco_print('Trainable Variables')
 		for var in tf.trainable_variables():
-			deco_print('Name: {} and shape: {}'.format(var.name, var.get_shape()))
+			deco_print('Name: {} \t Shape: {}'.format(var.name, var.get_shape()))
 
 		if self._config.optimizer == 'Momentum':
 			optimizer = lambda lr: tf.train.MomentumOptimizer(lr, momentum=0.9)

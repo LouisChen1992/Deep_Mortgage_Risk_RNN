@@ -269,9 +269,9 @@ class Model:
 		for var in tf.trainable_variables():
 			deco_print('Name: {} and shape: {}'.format(var.name, var.get_shape()))
 
-		if self._config.optimizer = 'Momentum':
+		if self._config.optimizer == 'Momentum':
 			optimizer = lambda lr: tf.train.MomentumOptimizer(lr, momentum=0.9)
-		elif self._config.optimizer = 'AdaDelta':
+		elif self._config.optimizer == 'AdaDelta':
 			optimizer = lambda lr: tf.train.AdadeltaOptimizer(lr, rho=0.95, epsilon=1e-08)
 		else:
 			optimizer = self._config.optimizer

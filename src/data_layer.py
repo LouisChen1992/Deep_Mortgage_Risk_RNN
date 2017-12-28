@@ -5,7 +5,7 @@ import numpy as np
 from .utils import weighted_choice
 
 class DataInRamInputLayer():
-	def __init__(self, path, shuffle=False, load_file_list=True):
+	def __init__(self, path, shuffle=True, load_file_list=True):
 		self._path = path
 		self._shuffle = shuffle
 		self._create_covariate_idx_associations()
@@ -92,8 +92,12 @@ class DataInRamInputLayer():
 		bucket_idx = {bucket:0 for bucket in self._buckets}
 		bucket_count_left = copy.deepcopy(self._bucket_count)
 
+		total_count = sum(self._bucket_count.values())
+		current_count = 0.0
+
 		bucket = weighted_choice(bucket_count_left, self._buckets)
 		while bucket is not None:
+			current_count += 1
 			idx_file = self._bucket_outseq[bucket][bucket_idx[bucket]]
 			X_int = np.load(os.path.join(self._path, self._bucket_X_int[bucket][idx_file]))
 			X_float = np.load(os.path.join(self._path, self._bucket_X_float[bucket][idx_file]))
@@ -107,13 +111,16 @@ class DataInRamInputLayer():
 				np.random.shuffle(idx_example)
 
 			for idx_batch in range(num_batch):
-				idx_input = idx_example[idx_batch*batch_size:(idx_batch+1)*batch_size]
+				batch_start = idx_batch*batch_size
+				batch_end = (idx_batch+1)*batch_size
+
+				idx_input = idx_example[batch_start:batch_end]
 				X_int_input = X_int[idx_input]
 				X_float_input = X_float[idx_input]
 				X_input = np.concatenate((X_int_input[:,:,:-2], X_float_input), axis=2) # remove last two integer feature
 				Y_input = outcome[idx_input]
 				tDimSplit_input = tDimSplit[idx_input]
-				yield X_input, Y_input, tDimSplit_input
+				yield X_input, Y_input, tDimSplit_input, current_count / total_count
 
 			bucket_count_left[bucket] -= 1
 			bucket_idx[bucket] += 1

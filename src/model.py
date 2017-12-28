@@ -57,6 +57,7 @@ class Config:
 		self._num_layers = num_layers
 		self._num_gpus = num_gpus
 		self._batch_size_per_gpu = batch_size_per_gpu
+		self._global_batch_size = self._num_gpus * self._batch_size_per_gpu
 		self._optimizer = optimizer
 		self._learning_rate = learning_rate
 		self._decay_steps = decay_steps
@@ -92,6 +93,10 @@ class Config:
 		return self._batch_size_per_gpu
 
 	@property
+	def global_batch_size(self):
+		return self._global_batch_size
+
+	@property
 	def optimizer(self):
 		return self._optimizer
 
@@ -112,23 +117,30 @@ class Config:
 		return self._dropout
 
 class Model:
-	def __init__(self, config, global_step=None, force_var_reuse=False, is_training=True):
+	def __init__(self, config, global_step=None, force_var_reuse=False, is_training=True, use_valid_set=False):
 		self._config = config
 		self._force_var_reuse = force_var_reuse
 		self._is_training = is_training
-		self._global_batch_size = self._config.num_gpus * self._config.batch_size_per_gpu
+		self._use_valid_set = use_valid_set
 		self._global_step = global_step is global_step is not None else tf.contrib.framework.get_or_create_global_step()
 
-		self._x_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._global_batch_size, None, self._config.feature_dim], name='input_placeholder')
-		self._x_length = tf.placeholder(dtype=tf.int32, shape=[self._global_batch_size])
+		self._x_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config.global_batch_size, None, self._config.feature_dim], name='input_placeholder')
+		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config.global_batch_size, None], name='output_placeholder')
+		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config.global_batch_size, 3])
 
 		xs = tf.split(value=self._x_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
-		x_lengths = tf.split(value=self._x_length, num_or_size_splits=self._config.num_gpus, axis=0)
+		ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
+		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
 
-		if self._is_training:
-			self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._global_batch_size, None], name='output_placeholder')
-			ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
-			self._loss = 0
+		# self._x_length = tf.placeholder(dtype=tf.int32, shape=[self._global_batch_size])
+		# x_lengths = tf.split(value=self._x_length, num_or_size_splits=self._config.num_gpus, axis=0)
+
+		loss = 0.0
+		num = 0
+
+		if self._is_training and self._use_valid_set:
+			loss_valid = 0.0
+			num_valid = 0
 
 		for gpu_idx in range(self._config.num_gpus):
 			with tf.device('/gpu:{}'.format(gpu_idx)), tf.variable_scope(
@@ -138,14 +150,31 @@ class Model:
 
 				deco_print('Building graph on GPU:{}'.format(gpu_idx))
 
-				logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_lengths[gpu_idx])
 				if self._is_training:
-					loss_i = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=x_lengths[gpu_idx])
-					weight_i = tf.reduce_sum(x_lengths[gpu_idx]) / tf.reduce_sum(self._x_length)
-					self._loss += loss_i * weight_i
+					x_length = tf.reduce_sum(tDimSplits[gpu_idx][:,:2], axis=1)
+					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
+					loss_i_sum_train, num_i_train, loss_i_sum_valid, num_i_valid = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx][:,:2])
+					loss += loss_i_sum_train
+					num += num_i_train
+					if self._use_valid_set:
+						loss_valid += loss_i_sum_valid
+						num_valid += num_i_valid
+					# loss_i = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=x_lengths[gpu_idx])
+					# weight_i = tf.reduce_sum(x_lengths[gpu_idx]) / tf.reduce_sum(self._x_length)
+					# self._loss += loss_i * weight_i
+				else:
+					x_length = tf.reduce_sum(tDimSplits[gpu_idx], axis=1)
+					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
+					loss_i, num_i = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
+					loss += loss_i
+					num += num_i
+
+		self._loss = loss / num # training or test loss
 
 		if self._is_training:
 			self._add_train_op()
+			if self._use_valid_set:
+				self._loss_valid = loss_valid / num_valid
 
 	def _build_forward_pass_graph(self, x, x_length):
 		with tf.variable_scope('{}_layer'.format(self._config.cell_type)):
@@ -164,18 +193,76 @@ class Model:
 		return logits
 
 	def _add_loss(self, logits, labels, lengths):
-		ts = tf.reduce_max(lengths)
-		logits = tf.slice(logits, begin=[0, 0, 0], size=[-1, ts, -1])
-		labels = tf.slice(labels, begin=[0, 0], size=[-1, ts])
-		mask = tf.sequence_mask(lengths=lengths, maxlen=ts, dtype=tf.float32)
-		loss = tf.contrib.seq2seq.sequence_loss(
-			logits=logits,
-			targets=labels,
-			weights=mask,
-			average_across_timesteps=True,
-			average_across_batch=True,
-			softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
-		return loss
+		if self._is_training:
+			x_length_part = lengths[:,0]
+			x_length = tf.reduce_sum(lengths, axis=1)
+			ts = tf.reduce_max(x_length)
+
+			logits = tf.slice(logits, begin=[0,0,0], size=[-1,ts,-1])
+			labels = tf.slice(labels, begin=[0,0], size=[-1,ts])
+
+			if self._use_valid_set:
+				mask_train = tf.sequence_mask(lengths=x_length_part, maxlen=ts, dtype=tf.float32)
+				mask = tf.sequence_mask(lengths=x_length, maxlen=ts, dtype=tf.float32)
+				mask_valid = mask - mask_train
+			else:
+				mask_train = tf.sequence_mask(lengths=x_length, maxlen=ts, dtype=tf.float32)
+
+			loss_sum_train = tf.contrib.seq2seq.sequence_loss(
+				logits=logits,
+				targets=labels,
+				weights=mask_train,
+				average_across_timesteps=False,
+				average_across_batch=False,
+				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+			num_train = tf.reduce_sum(mask_train)
+
+			if self._use_valid_set:
+				loss_sum_valid = tf.contrib.seq2seq.sequence_loss(
+					logits=logits,
+					targets=labels,
+					weights=mask_valid,
+					average_across_timesteps=False,
+					average_across_batch=False,
+					softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+				num_valid = tf.reduce_sum(mask_valid)
+				return loss_sum_train, num_train, loss_sum_valid, num_valid
+			else:
+				return loss_sum_train, num_train, None, None
+		else:
+			x_length_part = tf.reduce_sum(lengths[:,:2], axis=1)
+			x_length = tf.reduce_sum(lengths, axis=1)
+			ts = tf.reduce_max(x_length)
+
+			logits = tf.slice(logits, begin=[0,0,0], size=[-1,ts,-1])
+			labels = tf.slice(labels, begin=[0,0], size=[-1,ts])
+
+			mask = tf.sequence_mask(lengths=x_length, maxlen=ts, dtype=tf.float32)
+			mask_part = tf.sequence_mask(lengths=x_length_part, maxlen=ts, dtype=tf.float32)
+			mask_test = mask - mask_part
+
+			loss_sum = tf.contrib.seq2seq.sequence_loss(
+				logits=logits,
+				targets=labels,
+				weights=mask_test,
+				average_across_timesteps=False,
+				average_across_batch=False,
+				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+			num = tf.reduce_sum(mask_test)
+			return loss_sum, num
+
+		# ts = tf.reduce_max(lengths)
+		# logits = tf.slice(logits, begin=[0, 0, 0], size=[-1, ts, -1])
+		# labels = tf.slice(labels, begin=[0, 0], size=[-1, ts])
+		# mask = tf.sequence_mask(lengths=lengths, maxlen=ts, dtype=tf.float32)
+		# loss = tf.contrib.seq2seq.sequence_loss(
+		# 	logits=logits,
+		# 	targets=labels,
+		# 	weights=mask,
+		# 	average_across_timesteps=True,
+		# 	average_across_batch=True,
+		# 	softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
+		# return loss
 	
 	def _add_train_op(self):
 		deco_print('Trainable Variables')

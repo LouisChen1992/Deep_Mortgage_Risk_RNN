@@ -48,7 +48,8 @@ deco_print_dict(vars(config))
 deco_print('Model Created! ')
 ###
 
-with tf.Session() as sess:
+sess_config = tf.ConfigProto(allow_soft_placement=True)
+with tf.Session(config=sess_config) as sess:
 	saver = tf.train.Saver(max_to_keep=50)
 	if tf.train.latest_checkpoint(FLAGS.logdir) is not None:
 		saver.restore(sess, tf.train.latest_checkpoint(FLAGS.logdir))

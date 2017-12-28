@@ -44,7 +44,7 @@ class Config:
 				num_units=[200, 140, 140, 140, 140],
 				num_layers=5,
 				num_gpus=2,
-				batch_size_per_gpu=2000,
+				batch_size_per_gpu=1000,
 				optimizer='Momentum',
 				learning_rate=0.1,
 				decay_steps=None,
@@ -150,18 +150,19 @@ class Model:
 				if self._is_training:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx][:,:2], axis=1)
 					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
-					loss_i_sum_train, num_i_train, loss_i_sum_valid, num_i_valid = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx][:,:2])
+					loss_i_sum_train, loss_i_sum_valid = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx][:,:2])
 					loss += loss_i_sum_train
-					num += num_i_train
-					if self._use_valid_set:
+					if not self._use_valid_set:
+						num += tf.reduce_sum(tDimSplits[gpu_idx][:,:2])
+					else:
+						num += tf.reduce_sum(tDimSplits[gpu_idx][:,0])
 						loss_valid += loss_i_sum_valid
-						num_valid += num_i_valid
+						num_valid += tf.reduce_sum(tDimSplits[gpu_idx][:,1])
 				else:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx], axis=1)
 					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
-					loss_i, num_i = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
-					loss += loss_i
-					num += num_i
+					loss += self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
+					num += tf.reduce_sum(tDimSplits[gpu_idx][:,2])
 
 		self._loss = loss / num # training or test loss
 
@@ -209,7 +210,7 @@ class Model:
 				average_across_timesteps=False,
 				average_across_batch=False,
 				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-			num_train = tf.reduce_sum(mask_train)
+			# num_train = tf.reduce_sum(mask_train)
 
 			if self._use_valid_set:
 				loss_sum_valid = tf.reduce_sum(tf.contrib.seq2seq.sequence_loss(
@@ -219,10 +220,10 @@ class Model:
 					average_across_timesteps=False,
 					average_across_batch=False,
 					softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-				num_valid = tf.reduce_sum(mask_valid)
-				return loss_sum_train, num_train, loss_sum_valid, num_valid
+				# num_valid = tf.reduce_sum(mask_valid)
+				return loss_sum_train, loss_sum_valid
 			else:
-				return loss_sum_train, num_train, None, None
+				return loss_sum_train, None
 		else:
 			x_length_part = tf.reduce_sum(lengths[:,:2], axis=1)
 			x_length = tf.reduce_sum(lengths, axis=1)
@@ -242,7 +243,7 @@ class Model:
 				average_across_timesteps=False,
 				average_across_batch=False,
 				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-			num = tf.reduce_sum(mask_test)
+			# num = tf.reduce_sum(mask_test)
 			return loss_sum, num
 	
 	def _add_train_op(self):

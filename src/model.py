@@ -171,9 +171,6 @@ class Model:
 
 		self._loss = loss / num # training or test loss
 
-		print(self._loss)
-		gdgd
-
 		if self._is_training:
 			self._add_train_op()
 			if self._use_valid_set:

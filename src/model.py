@@ -132,9 +132,6 @@ class Model:
 		ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
 		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
 
-		# self._x_length = tf.placeholder(dtype=tf.int32, shape=[self._global_batch_size])
-		# x_lengths = tf.split(value=self._x_length, num_or_size_splits=self._config.num_gpus, axis=0)
-
 		loss = 0.0
 		num = 0
 
@@ -159,9 +156,6 @@ class Model:
 					if self._use_valid_set:
 						loss_valid += loss_i_sum_valid
 						num_valid += num_i_valid
-					# loss_i = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=x_lengths[gpu_idx])
-					# weight_i = tf.reduce_sum(x_lengths[gpu_idx]) / tf.reduce_sum(self._x_length)
-					# self._loss += loss_i * weight_i
 				else:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx], axis=1)
 					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
@@ -250,19 +244,6 @@ class Model:
 				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
 			num = tf.reduce_sum(mask_test)
 			return loss_sum, num
-
-		# ts = tf.reduce_max(lengths)
-		# logits = tf.slice(logits, begin=[0, 0, 0], size=[-1, ts, -1])
-		# labels = tf.slice(labels, begin=[0, 0], size=[-1, ts])
-		# mask = tf.sequence_mask(lengths=lengths, maxlen=ts, dtype=tf.float32)
-		# loss = tf.contrib.seq2seq.sequence_loss(
-		# 	logits=logits,
-		# 	targets=labels,
-		# 	weights=mask,
-		# 	average_across_timesteps=True,
-		# 	average_across_batch=True,
-		# 	softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits)
-		# return loss
 	
 	def _add_train_op(self):
 		deco_print('Trainable Variables')

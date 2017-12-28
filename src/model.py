@@ -133,11 +133,11 @@ class Model:
 		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
 
 		loss = 0.0
-		num = 0
+		num = 0.0
 
 		if self._is_training and self._use_valid_set:
 			loss_valid = 0.0
-			num_valid = 0
+			num_valid = 0.0
 
 		for gpu_idx in range(self._config.num_gpus):
 			with tf.device('/gpu:{}'.format(gpu_idx)), tf.variable_scope(

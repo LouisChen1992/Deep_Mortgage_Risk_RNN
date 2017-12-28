@@ -115,13 +115,6 @@ class DataInRamInputLayer():
 				tDimSplit_input = tDimSplit[idx_input]
 				yield X_input, Y_input, tDimSplit_input
 
-			###
-			print(bucket)
-			print(bucket_idx)
-			print(bucket_count_left)
-			input()
-			###
-
 			bucket_count_left[bucket] -= 1
 			bucket_idx[bucket] += 1
 			bucket = weighted_choice(bucket_count_left, self._buckets)

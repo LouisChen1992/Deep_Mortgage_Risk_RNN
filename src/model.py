@@ -133,11 +133,11 @@ class Model:
 		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
 
 		loss = 0.0
-		num = 0.0
+		num = 0
 
 		if self._is_training and self._use_valid_set:
 			loss_valid = 0.0
-			num_valid = 0.0
+			num_valid = 0
 
 		for gpu_idx in range(self._config.num_gpus):
 			with tf.device('/gpu:{}'.format(gpu_idx)), tf.variable_scope(
@@ -164,12 +164,12 @@ class Model:
 					loss += self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
 					num += tf.reduce_sum(tDimSplits[gpu_idx][:,2])
 
-		self._loss = loss / num # training or test loss
+		self._loss = loss / tf.to_float(num) # training or test loss
 
 		if self._is_training:
 			self._add_train_op()
 			if self._use_valid_set:
-				self._loss_valid = loss_valid / num_valid
+				self._loss_valid = loss_valid / tf.to_float(num_valid)
 
 	def _build_forward_pass_graph(self, x, x_length):
 		with tf.variable_scope('{}_layer'.format(self._config.cell_type)):
@@ -210,7 +210,6 @@ class Model:
 				average_across_timesteps=False,
 				average_across_batch=False,
 				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-			# num_train = tf.reduce_sum(mask_train)
 
 			if self._use_valid_set:
 				loss_sum_valid = tf.reduce_sum(tf.contrib.seq2seq.sequence_loss(
@@ -220,7 +219,6 @@ class Model:
 					average_across_timesteps=False,
 					average_across_batch=False,
 					softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-				# num_valid = tf.reduce_sum(mask_valid)
 				return loss_sum_train, loss_sum_valid
 			else:
 				return loss_sum_train, None
@@ -243,7 +241,6 @@ class Model:
 				average_across_timesteps=False,
 				average_across_batch=False,
 				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-			# num = tf.reduce_sum(mask_test)
 			return loss_sum, num
 	
 	def _add_train_op(self):

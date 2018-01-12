@@ -12,6 +12,7 @@ tf.flags.DEFINE_string('logdir', '', 'Path to save logs and checkpoints')
 tf.flags.DEFINE_string('mode', 'valid', 'Mode: train/valid/test')
 tf.flags.DEFINE_string('dataset', 'subprime', 'Dataset: subprime/prime/all')
 tf.flags.DEFINE_integer('num_epochs', 50, 'Number of training epochs')
+tf.flags.DEFINE_integer('summary_frequency', 100, 'iterations after which summary takes place')
 FLAGS = tf.flags.FLAGS
 
 ### Create Data Layer
@@ -66,6 +67,7 @@ with tf.Session(config=sess_config) as sess:
 		for epoch in range(FLAGS.num_epochs):
 			epoch_start = time.time()
 
+			### SGD step
 			total_loss = 0.0
 			count = 0
 			for i, (X, Y, tDimSplit, p) in enumerate(dl.iterate_one_epoch(batch_size=config.global_batch_size)):
@@ -73,11 +75,14 @@ with tf.Session(config=sess_config) as sess:
 				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
 				total_loss += loss_i
 				count += 1
-				if count % 100 == 0:
+				if count % FLAGS.summary_frequency == 0:
+					sm, = sess.run(fetches=[summary_op], feed_dict=feed_dict)
+					sw.add_summary(sm, global_step=sess.run(model._global_step))
 					time_last = time.time() - epoch_start
 					time_est = time_last / p
 					deco_print('Training Loss Update: %f, Elapse / Estimate: %.2fs / %.2fs     ' %(total_loss / count, time_last, time_est), end='\r')
 
+			### Epoch loss summary
 			total_train_loss = 0.0
 			count_train = 0
 			if FLAGS.mode == 'valid':
@@ -87,15 +92,15 @@ with tf.Session(config=sess_config) as sess:
 			for i, (X, Y, tDimSplit, _) in enumerate(dl.iterate_one_epoch(batch_size=config.global_batch_size)):
 				feed_dict = {model._x_placeholder:X, model._y_placeholder:Y, model._tDimSplit_placeholder:tDimSplit}
 				if FLAGS.mode == 'train':
-					loss_i, = sess.run(fetches=[model._loss], feed_dict=feed_dict)
+					loss_i, num_i = sess.run(fetches=[model._sum_loss, model._num], feed_dict=feed_dict)
 					total_train_loss += loss_i
-					count_train += 1
+					count_train += num_i
 				else:
-					loss_i, loss_i_valid = sess.run(fetches=[model._loss, model._loss_valid], feed_dict=feed_dict)
+					loss_i, loss_i_valid, num_i, num_i_valid = sess.run(fetches=[model._sum_loss, model._sum_loss_valid, model._num, model._num_valid], feed_dict=feed_dict)
 					total_train_loss += loss_i
 					total_valid_loss += loss_i_valid
-					count_train += 1
-					count_valid += 1
+					count_train += num_i
+					count_valid += num_i_valid
 
 			train_loss = total_train_loss / count_train
 			deco_print('Epoch {} Training Loss: {}                              '.format(epoch, train_loss))
@@ -110,8 +115,11 @@ with tf.Session(config=sess_config) as sess:
 
 			sw.add_summary(summary=summary, global_step=epoch)
 			sw.flush()
+			deco_print('Saving Epoch Checkpoint')
+			saver.save(sess, save_path=os.path.join(FLAGS.logdir, 'model-epoch'), global_step=epoch)
 			epoch_end = time.time()
 			deco_print('Did Epoch {} In {} Seconds '.format(epoch, epoch_end - epoch_start))
+
 	else:
 		pass
 

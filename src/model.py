@@ -132,12 +132,12 @@ class Model:
 		ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
 		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
 
-		loss = 0.0
-		num = 0
+		self._sum_loss = 0.0 # sum of loss in example
+		self._num = 0 # count
 
 		if self._is_training and self._use_valid_set:
-			loss_valid = 0.0
-			num_valid = 0
+			self._sum_loss_valid = 0.0
+			self._num_valid = 0
 
 		for gpu_idx in range(self._config.num_gpus):
 			with tf.device('/gpu:{}'.format(gpu_idx)), tf.variable_scope(
@@ -151,25 +151,25 @@ class Model:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx][:,:2], axis=1)
 					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
 					loss_i_sum_train, loss_i_sum_valid = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx][:,:2])
-					loss += loss_i_sum_train
+					self._sum_loss += loss_i_sum_train
 					if not self._use_valid_set:
-						num += tf.reduce_sum(tDimSplits[gpu_idx][:,:2])
+						self._num += tf.reduce_sum(tDimSplits[gpu_idx][:,:2])
 					else:
-						num += tf.reduce_sum(tDimSplits[gpu_idx][:,0])
-						loss_valid += loss_i_sum_valid
-						num_valid += tf.reduce_sum(tDimSplits[gpu_idx][:,1])
+						self._num += tf.reduce_sum(tDimSplits[gpu_idx][:,0])
+						self._sum_loss_valid += loss_i_sum_valid
+						self._num_valid += tf.reduce_sum(tDimSplits[gpu_idx][:,1])
 				else:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx], axis=1)
 					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
-					loss += self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
-					num += tf.reduce_sum(tDimSplits[gpu_idx][:,2])
+					self._sum_loss += self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
+					self._num += tf.reduce_sum(tDimSplits[gpu_idx][:,2])
 
-		self._loss = loss / tf.to_float(num) # training or test loss
+		self._loss = self._sum_loss / tf.to_float(self._num) # training or test loss
 
 		if self._is_training:
 			self._add_train_op()
 			if self._use_valid_set:
-				self._loss_valid = loss_valid / tf.to_float(num_valid)
+				self._loss_valid = self._sum_loss_valid / tf.to_float(self._num_valid)
 
 	def _build_forward_pass_graph(self, x, x_length):
 		with tf.variable_scope('{}_layer'.format(self._config.cell_type)):

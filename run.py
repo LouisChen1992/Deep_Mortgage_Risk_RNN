@@ -78,6 +78,7 @@ with tf.Session(config=sess_config) as sess:
 				if count % FLAGS.summary_frequency == 0:
 					sm, = sess.run(fetches=[summary_op], feed_dict=feed_dict)
 					sw.add_summary(sm, global_step=sess.run(model._global_step))
+					sw.flush()
 					time_last = time.time() - epoch_start
 					time_est = time_last / p
 					deco_print('Training Loss Update: %f, Elapse / Estimate: %.2fs / %.2fs     ' %(total_loss / count, time_last, time_est), end='\r')

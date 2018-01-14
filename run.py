@@ -119,7 +119,7 @@ with tf.Session(config=sess_config) as sess:
 			deco_print('Saving Epoch Checkpoint')
 			saver.save(sess, save_path=os.path.join(FLAGS.logdir, 'model-epoch'), global_step=epoch)
 			epoch_end = time.time()
-			deco_print('Did Epoch {} In {} Seconds '.format(epoch, epoch_end - epoch_start))
+			deco_print('Did Epoch {} In {} Seconds \n'.format(epoch, epoch_end - epoch_start))
 
 	else:
 		pass

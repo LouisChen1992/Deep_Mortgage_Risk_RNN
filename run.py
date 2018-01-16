@@ -24,9 +24,9 @@ config['global_batch_size'] = config['num_gpus'] * config['batch_size_per_gpu']
 if 'selected_covariate_file_int' in config and config['selected_covariate_file_int'] and \
 	'selected_covariate_file_float' in config and config['selected_covariate_file_float']:
 	with open(config['selected_covariate_file_int'], 'r') as f:
-		selected_int = json.load(f).values()
+		selected_int = list(json.load(f).values())
 	with open(config['selected_covariate_file_float'], 'r') as f:
-		selected_float = json.load(f).values()
+		selected_float = list(json.load(f).values())
 	config['feature_dim'] = len(selected_int) + len(selected_float)
 else:
 	selected_int = False

@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import numpy as np
 import tensorflow as tf
@@ -8,12 +9,21 @@ from src.model import Config, Model
 from src.data_layer import DataInRamInputLayer
 from src.utils import deco_print, deco_print_dict
 
+tf.flags.DEFINE_string('config', '', 'Path to config file')
 tf.flags.DEFINE_string('logdir', '', 'Path to save logs and checkpoints')
 tf.flags.DEFINE_string('mode', 'valid', 'Mode: train/valid/test')
 tf.flags.DEFINE_string('dataset', 'subprime', 'Dataset: subprime/prime/all')
 tf.flags.DEFINE_integer('num_epochs', 50, 'Number of training epochs')
 tf.flags.DEFINE_integer('summary_frequency', 100, 'iterations after which summary takes place')
 FLAGS = tf.flags.FLAGS
+
+### Load Config File
+with open(FLAGS.config) as file:
+	config = json.load(file)
+	config['global_batch_size'] = config['num_gpus'] * config['batch_size_per_gpu']
+deco_print('Read Following Config')
+deco_print_dict(config)
+###
 
 ### Create Data Layer
 deco_print('Creating Data Layer...')
@@ -39,13 +49,9 @@ deco_print('Data Layer Created! ')
 ### Create Model
 deco_print('Creating Model...')
 if FLAGS.mode == 'train' or FLAGS.mode == 'valid':
-	config = Config(feature_dim=291, num_category=7, cell_type='lstm', dropout=0.9)
 	model = Model(config, is_training=True, use_valid_set=(FLAGS.mode=='valid'))
 elif FLAGS.mode == 'test':
-	config = Config(feature_dim=291, num_category=7, cell_type='lstm', dropout=1.0)
 	model = Model(config, is_training=False, use_valid_set=False)
-deco_print('Read Following Config')
-deco_print_dict(vars(config))
 deco_print('Model Created! ')
 ###
 
@@ -70,7 +76,7 @@ with tf.Session(config=sess_config) as sess:
 			### SGD step
 			total_loss = 0.0
 			count = 0
-			for i, (X, Y, tDimSplit, p) in enumerate(dl.iterate_one_epoch(batch_size=config.global_batch_size)):
+			for i, (X, Y, tDimSplit, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
 				feed_dict = {model._x_placeholder:X, model._y_placeholder:Y, model._tDimSplit_placeholder:tDimSplit}
 				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
 				total_loss += loss_i
@@ -90,7 +96,7 @@ with tf.Session(config=sess_config) as sess:
 				total_valid_loss = 0.0
 				count_valid = 0
 
-			for i, (X, Y, tDimSplit, _) in enumerate(dl.iterate_one_epoch(batch_size=config.global_batch_size)):
+			for i, (X, Y, tDimSplit, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
 				feed_dict = {model._x_placeholder:X, model._y_placeholder:Y, model._tDimSplit_placeholder:tDimSplit}
 				if FLAGS.mode == 'train':
 					loss_i, num_i = sess.run(fetches=[model._sum_loss, model._num], feed_dict=feed_dict)

@@ -1,0 +1,7 @@
+{
+	"current delinquency status == C": 0,
+	"current delinquency status == 3": 1,
+	"current delinquency status == 6": 2,
+	"current delinquency status == 9": 3,
+	"current delinquency status == F|R": 4
+}

@@ -36,86 +36,6 @@ def create_rnn_cell(cell_type,
 		else:
 			return single_cell(num_units)
 
-class Config:
-	def __init__(self,
-				feature_dim,
-				num_category,
-				cell_type,
-				num_units=[200, 140, 140, 140, 140],
-				num_layers=5,
-				num_gpus=2,
-				batch_size_per_gpu=1000,
-				optimizer='Momentum',
-				learning_rate=0.1,
-				decay_steps=None,
-				decay_rate=None,
-				dropout=1.0):
-		self._feature_dim = feature_dim
-		self._num_category = num_category
-		self._cell_type = cell_type
-		self._num_units = num_units
-		self._num_layers = num_layers
-		self._num_gpus = num_gpus
-		self._batch_size_per_gpu = batch_size_per_gpu
-		self._global_batch_size = self._num_gpus * self._batch_size_per_gpu
-		self._optimizer = optimizer
-		self._learning_rate = learning_rate
-		self._decay_steps = decay_steps
-		self._decay_rate = decay_rate
-		self._dropout = dropout
-
-	@property
-	def feature_dim(self):
-		return self._feature_dim
-
-	@property
-	def num_category(self):
-		return self._num_category
-
-	@property
-	def cell_type(self):
-		return self._cell_type
-
-	@property
-	def num_units(self):
-		return self._num_units
-
-	@property
-	def num_layers(self):
-		return self._num_layers
-
-	@property
-	def num_gpus(self):
-		return self._num_gpus
-
-	@property
-	def batch_size_per_gpu(self):
-		return self._batch_size_per_gpu
-
-	@property
-	def global_batch_size(self):
-		return self._global_batch_size
-
-	@property
-	def optimizer(self):
-		return self._optimizer
-
-	@property
-	def learning_rate(self):
-		return self._learning_rate
-
-	@property
-	def decay_steps(self):
-		return self._decay_steps
-
-	@property
-	def decay_rate(self):
-		return self._decay_rate
-
-	@property
-	def dropout(self):
-		return self._dropout
-
 class Model:
 	def __init__(self, config, global_step=None, force_var_reuse=False, is_training=True, use_valid_set=False):
 		self._config = config
@@ -124,13 +44,13 @@ class Model:
 		self._use_valid_set = use_valid_set
 		self._global_step = global_step if global_step is not None else tf.contrib.framework.get_or_create_global_step()
 
-		self._x_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config.global_batch_size, None, self._config.feature_dim], name='input_placeholder')
-		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config.global_batch_size, None], name='output_placeholder')
-		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config.global_batch_size, 3])
+		self._x_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim']], name='input_placeholder')
+		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], None], name='output_placeholder')
+		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], 3])
 
-		xs = tf.split(value=self._x_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
-		ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
-		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config.num_gpus, axis=0)
+		xs = tf.split(value=self._x_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
+		ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
+		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 
 		self._sum_loss = 0.0 # sum of loss in example
 		self._num = 0 # count
@@ -139,7 +59,7 @@ class Model:
 			self._sum_loss_valid = 0.0
 			self._num_valid = 0
 
-		for gpu_idx in range(self._config.num_gpus):
+		for gpu_idx in range(self._config['num_gpus']):
 			with tf.device('/gpu:{}'.format(gpu_idx)), tf.variable_scope(
 				name_or_scope=tf.get_variable_scope(),
 				initializer=tf.random_uniform_initializer(minval=-0.5, maxval=0.5),
@@ -172,17 +92,17 @@ class Model:
 				self._loss_valid = self._sum_loss_valid / tf.to_float(self._num_valid)
 
 	def _build_forward_pass_graph(self, x, x_length):
-		with tf.variable_scope('{}_layer'.format(self._config.cell_type)):
+		with tf.variable_scope('{}_layer'.format(self._config['cell_type'])):
 			rnn_cell = create_rnn_cell(
-				cell_type=self._config.cell_type,
-				num_units=self._config.num_units,
-				num_layers=self._config.num_layers,
-				dp_input_keep_prob=self._config.dropout,
+				cell_type=self._config['cell_type'],
+				num_units=self._config['num_units'],
+				num_layers=self._config['num_layers'],
+				dp_input_keep_prob=self._config['dropout'],
 				dp_output_keep_prob=1.0)
 			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x, sequence_length=x_length, dtype=tf.float32)
 
 		with tf.variable_scope('output_layer'):
-			layer = Dense(units=self._config.num_category)
+			layer = Dense(units=self._config['num_category'])
 			logits = layer(outputs)
 
 		return logits
@@ -248,19 +168,19 @@ class Model:
 		for var in tf.trainable_variables():
 			deco_print('Name: {} \t Shape: {}'.format(var.name, var.get_shape()))
 
-		if self._config.optimizer == 'Momentum':
+		if self._config['optimizer'] == 'Momentum':
 			optimizer = lambda lr: tf.train.MomentumOptimizer(lr, momentum=0.9)
-		elif self._config.optimizer == 'AdaDelta':
+		elif self._config['optimizer'] == 'AdaDelta':
 			optimizer = lambda lr: tf.train.AdadeltaOptimizer(lr, rho=0.95, epsilon=1e-08)
 		else:
-			optimizer = self._config.optimizer
+			optimizer = self._config['optimizer']
 
-		if self._config.decay_steps is not None and self._config.decay_rate is not None:
+		if self._config['decay_steps'] and self._config['decay_rate']:
 			learning_rate_decay_fn = lambda lr, global_step: tf.train.exponential_decay(
 				learning_rate=lr,
 				global_step=global_step,
-				decay_steps=self._config.decay_steps,
-				decay_rate=self._config.decay_rate,
+				decay_steps=self._config['decay_steps'],
+				decay_rate=self._config['decay_rate'],
 				staircase=True)
 		else:
 			learning_rate_decay_fn = None
@@ -268,7 +188,7 @@ class Model:
 		self._train_op = tf.contrib.layers.optimize_loss(
 			loss=self._loss,
 			global_step=self._global_step,
-			learning_rate=self._config.learning_rate,
+			learning_rate=self._config['learning_rate'],
 			optimizer=optimizer,
 			gradient_noise_scale=None,
 			gradient_multipliers=None,

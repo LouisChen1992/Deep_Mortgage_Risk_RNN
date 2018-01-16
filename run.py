@@ -18,9 +18,19 @@ tf.flags.DEFINE_integer('summary_frequency', 100, 'iterations after which summar
 FLAGS = tf.flags.FLAGS
 
 ### Load Config File
-with open(FLAGS.config) as file:
-	config = json.load(file)
-	config['global_batch_size'] = config['num_gpus'] * config['batch_size_per_gpu']
+with open(FLAGS.config, 'r') as f:
+	config = json.load(f)
+config['global_batch_size'] = config['num_gpus'] * config['batch_size_per_gpu']
+if 'selected_covariate_file_int' in config and config['selected_covariate_file_int'] and /
+	'selected_covariate_file_float' in config and config['selected_covariate_file_float']:
+	with open(config['selected_covariate_file_int'], 'r') as f:
+		selected_int = json.load(f).values()
+	with open(config['selected_covariate_file_float'], 'r') as f:
+		selected_float = json.load(f).values()
+	config['feature_dim'] = len(selected_int) + len(selected_float)
+else:
+	selected_int = False
+	selected_float = False
 deco_print('Read Following Config')
 deco_print_dict(config)
 ###
@@ -38,9 +48,9 @@ else:
 	raise ValueError('Dataset Not Found! ')
 
 if FLAGS.mode == 'train' or FLAGS.mode == 'valid':
-	dl = DataInRamInputLayer(path=path, shuffle=True)
+	dl = DataInRamInputLayer(path=path, shuffle=True, selected_int=selected_int, selected_float=selected_float)
 elif FLAGS.mode == 'test':
-	dl = DataInRamInputLayer(path=path, shuffle=False)
+	dl = DataInRamInputLayer(path=path, shuffle=False, selected_int=selected_int, selected_float=selected_float)
 else:
 	raise ValueError('Mode Not Implemented! ')
 deco_print('Data Layer Created! ')

@@ -4,6 +4,8 @@
 
 	"feature_dim" : 291,
 	"num_category" : 7,
+	"selected_covariate_file_int" : false,
+	"selected_covariate_file_float" : false,
 
 	"cell_type" : "lstm",
 	"num_units" : [200, 140, 140, 140, 140],

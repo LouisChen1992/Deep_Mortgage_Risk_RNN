@@ -107,6 +107,8 @@ class DataInRamInputLayer():
 			tDimSplit = np.load(os.path.join(self._path, self._bucket_tDimSplit[bucket][idx_file]))
 
 			if self._selected_int and self._selected_float:
+				print(self._selected_int)
+				dgd
 				X_int = X_int[:,:,self._selected_int]
 				X_float = X_float[:,:,self._selected_float]
 

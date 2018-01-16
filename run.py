@@ -21,7 +21,7 @@ FLAGS = tf.flags.FLAGS
 with open(FLAGS.config, 'r') as f:
 	config = json.load(f)
 config['global_batch_size'] = config['num_gpus'] * config['batch_size_per_gpu']
-if 'selected_covariate_file_int' in config and config['selected_covariate_file_int'] and /
+if 'selected_covariate_file_int' in config and config['selected_covariate_file_int'] and \
 	'selected_covariate_file_float' in config and config['selected_covariate_file_float']:
 	with open(config['selected_covariate_file_int'], 'r') as f:
 		selected_int = json.load(f).values()

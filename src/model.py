@@ -1,24 +1,39 @@
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
-from tensorflow.python.ops.rnn_cell import LSTMCell, GRUCell, DropoutWrapper, MultiRNNCell
+from tensorflow.python.ops.rnn_cell import BasicRNNCell, LSTMCell, GRUCell, DropoutWrapper, MultiRNNCell
 from .utils import deco_print
 
 def create_rnn_cell(cell_type,
 					num_units,
 					num_layers=1,
 					dp_input_keep_prob=1.0,
-					dp_output_keep_prob=1.0):
+					dp_output_keep_prob=1.0,
+					activation=None):
 
 	def single_cell(num_units):
-		if cell_type == 'lstm':
+		if cell_type == 'rnn':
+			cell_class = BasicRNNCell
+		elif cell_type == 'lstm':
 			cell_class = LSTMCell
 		elif cell_type == 'gru':
 			cell_class = GRUCell
 		else:
 			raise ValueError('Cell Type Not Supported! ')
 
+		if activation is not None:
+			if activation == 'relu':
+				activation_f = tf.nn.relu
+			elif activation == 'sigmoid':
+				activation_f = tf.sigmoid
+			elif activation == 'elu':
+				activation_f = tf.nn.elu
+			else:
+				raise ValueError('Activation Function Not Supported! ')
+		else:
+			activation_f = None
+
 		if dp_input_keep_prob != 1.0 or dp_output_keep_prob != 1.0:
-			return DropoutWrapper(cell_class(num_units=num_units),
+			return DropoutWrapper(cell_class(num_units=num_units, activation=activation_f),
 								input_keep_prob=dp_input_keep_prob,
 								output_keep_prob=dp_output_keep_prob)
 		else:
@@ -98,7 +113,8 @@ class Model:
 				num_units=self._config['num_units'],
 				num_layers=self._config['num_layers'],
 				dp_input_keep_prob=self._config['dropout'],
-				dp_output_keep_prob=1.0)
+				dp_output_keep_prob=1.0,
+				activation=self._config['activation'] if 'activation' in self._config else None)
 			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x, sequence_length=x_length, dtype=tf.float32)
 
 		with tf.variable_scope('output_layer'):

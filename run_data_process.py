@@ -331,10 +331,21 @@ elif args.dataset == 'all':
 	path_src = os.path.join(path_prime_subprime, 'subprime_new')
 	path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new')
 
-	bucket_data_src, buckets = create_file_dict(path_src)
-	bucket_data_tgt, buckets_tgt = create_file_dict(path_tgt)
-	print(buckets)
-	print(buckets_tgt)
+	bucket_data_src, buckets = create_file_dict(path_src) # subprime data
+	bucket_data_tgt, _ = create_file_dict(path_tgt) # prime data
+	num_bucket = {bucket:len(bucket_data_tgt['loanID'][bucket]) for bucket in buckets}
 
+	for bucket in buckets:
+		print('Processing bucket %s...' %bucket)
+		loanID = np.empty((0,), dtype='S8')
+		X_int = np.empty((0, lValue, 239), dtype='int8')
+		X_float = np.empty((0, lValue, 54), dtype='float32')
+		outcome = np.empty((0, lValue), dtype='int64')
+		tDimSplit = np.empty((0, 3), dtype='int16')
+		for (loanID_file, X_int_file, X_float_file, outcome_file, tDimSplit_file) in \
+			zip(bucket_data_src['loanID'], bucket_data_src['X_int'], bucket_data_src['X_float'], bucket_data_src['outcome'], bucket_data_src['tDimSplit']):
+			print('%s\n%s\n%s\n%s\n%s' %(loanID_file, X_int_file, X_float_file, outcome_file, tDimSplit_file))
+			print('Finished loading %s! ' %loanID_file, end='\r')
+			input()
 else:
 	raise ValueError('Dataset Not Found! ')

@@ -20,6 +20,55 @@ def decide_bucket(lValue, buckets):
 		if lValue <= bucket:
 			return bucket
 
+def create_file_dict(path):
+	### move to utils later!!!
+	loanID_list = []
+	X_int_list = []
+	X_float_list = []
+	outcome_list = []
+	tDimSplit_lsit = []
+
+	for file in os.listdir(path):
+		if file.startswith('loanID_np'):
+			lonaID_list.append(file)
+		elif file.startswith('X_data_np_int'):
+			X_int_list.append(file)
+		elif file.startswith('X_data_np_float'):
+			X_float_list.append(file)
+		elif file.startswith('outcome_data_np'):
+			outcome_list.append(file)
+		elif file.startswith('tDimSplit_np'):
+			tDimSplit_list.append(file)
+
+	buckets = list(set(map(lambda s: s.split('_')[2], loanID_list)))
+
+	bucket_loanID = {bucket:[] for bucket in buckets}
+	bucket_X_int = {bucket:[] for bucket in buckets}
+	bucket_X_float = {bucket:[] for bucket in buckets}
+	bucket_outcome = {bucket:[] for bucket in buckets}
+	bucket_tDimSplit = {bucket:[] for bucket in buckets}
+
+	for file in loanID_list:
+		bucket_loanID[file.split('_')[2]].append(file)
+	for file in X_int_list:
+		bucket_X_int[file.split('_')[4]].append(file)
+	for file in X_float_list:
+		bucket_X_float[file.split('_')[4]].append(file)
+	for file in outcome_list:
+		bucket_outcome[file.split('_')[3]].append(file)
+	for file in tDimSplit_list:
+		bucket_tDimSplit[file.split('_')[2]].append(file)
+
+	for bucket in buckets:
+		bucket_loanID[bucket] = sorted(bucket_loanID[bucket])
+		bucket_X_int[bucket] = sorted(bucket_X_int[bucket])
+		bucket_X_float[bucket] = sorted(bucket_X_float[bucket])
+		bucket_outcome[bucket] = sorted(bucket_outcome[bucket])
+		bucket_tDimSplit[bucket] = sorted(bucket_tDimSplit[bucket])
+
+	bucket_data = {'loanID':bucket_loanID, 'X_int':bucket_X_int, 'X_float':bucket_X_float, 'outcome':bucket_outcome, 'tDimSplit':bucket_tDimSplit}
+	return (bucket_data, buckets)
+
 path = os.path.expanduser('~')
 
 if args.dataset == 'subprime':
@@ -278,6 +327,14 @@ elif args.dataset == 'prime':
 		print('Finished data with lValue %d! \t %d / %d \t Elapse/Estimate: %0.2fs / %0.2fs' %(lValue, count_prime, bucket_count[bucket], time_elapse, time_estimate))
 
 elif args.dataset == 'all':
-	raise ValueError('Not Implemented!')
+	path_prime_subprime = os.path.join(path, 'data/RNNdata')
+	path_src = os.path.join(path_prime_subprime, 'subprime_new')
+	path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new')
+
+	bucket_data_src, buckets = create_file_dict(path_src)
+	bucket_data_tgt, buckets_tgt = create_file_dict(path_tgt)
+	print(buckets)
+	print(buckets_tgt)
+
 else:
 	raise ValueError('Dataset Not Found! ')

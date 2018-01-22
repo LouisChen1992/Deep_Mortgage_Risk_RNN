@@ -27,7 +27,8 @@ if 'selected_covariate_file_int' in config and config['selected_covariate_file_i
 		selected_int = list(json.load(f).values())
 	with open(config['selected_covariate_file_float'], 'r') as f:
 		selected_float = list(json.load(f).values())
-	config['feature_dim'] = len(selected_int) + len(selected_float)
+	config['feature_dim_rnn'] = len(selected_int) + len(selected_float)
+	config['feature_dim_ff'] = 291 - config['feature_dim_rnn']
 else:
 	selected_int = False
 	selected_float = False
@@ -86,8 +87,12 @@ with tf.Session(config=sess_config) as sess:
 			### SGD step
 			total_loss = 0.0
 			count = 0
-			for i, (X, Y, tDimSplit, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
-				feed_dict = {model._x_placeholder:X, model._y_placeholder:Y, model._tDimSplit_placeholder:tDimSplit}
+			for i, (X_RNN, X_FF, Y, tDimSplit, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+				feed_dict = {
+					model._x_rnn_placeholder:X_RNN, 
+					model._x_ff_placeholder:X_FF,
+					model._y_placeholder:Y, 
+					model._tDimSplit_placeholder:tDimSplit}
 				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
 				total_loss += loss_i
 				count += 1
@@ -106,8 +111,12 @@ with tf.Session(config=sess_config) as sess:
 				total_valid_loss = 0.0
 				count_valid = 0
 
-			for i, (X, Y, tDimSplit, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
-				feed_dict = {model._x_placeholder:X, model._y_placeholder:Y, model._tDimSplit_placeholder:tDimSplit}
+			for i, (X, X_FF, Y, tDimSplit, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+				feed_dict = {
+					model._x_rnn_placeholder:X_RNN, 
+					model._x_ff_placeholder:X_FF,
+					model._y_placeholder:Y, 
+					model._tDimSplit_placeholder:tDimSplit}
 				if FLAGS.mode == 'train':
 					loss_i, num_i = sess.run(fetches=[model._sum_loss, model._num], feed_dict=feed_dict)
 					total_train_loss += loss_i

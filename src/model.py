@@ -59,11 +59,13 @@ class Model:
 		self._use_valid_set = use_valid_set
 		self._global_step = global_step if global_step is not None else tf.contrib.framework.get_or_create_global_step()
 
-		self._x_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim']], name='input_placeholder')
+		self._x_rnn_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim_rnn']], name='input_placeholder')
+		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim_ff']], name='input_placeholder')
 		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], None], name='output_placeholder')
 		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], 3])
 
-		xs = tf.split(value=self._x_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
+		xs_rnn = tf.split(value=self._x_rnn_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
+		xs_ff = tf.split(value=self._x_ff_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 
@@ -84,7 +86,7 @@ class Model:
 
 				if self._is_training:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx][:,:2], axis=1)
-					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
+					logits_i = self._build_forward_pass_graph(x_rnn=xs_rnn[gpu_idx], x_ff=xs_ff[gpu_idx], x_length=x_length)
 					loss_i_sum_train, loss_i_sum_valid = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx][:,:2])
 					self._sum_loss += loss_i_sum_train
 					if not self._use_valid_set:
@@ -95,7 +97,7 @@ class Model:
 						self._num_valid += tf.reduce_sum(tDimSplits[gpu_idx][:,1])
 				else:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx], axis=1)
-					logits_i = self._build_forward_pass_graph(x=xs[gpu_idx], x_length=x_length)
+					logits_i = self._build_forward_pass_graph(x_rnn=xs_rnn[gpu_idx], x_ff=xs_ff[gpu_idx], x_length=x_length)
 					self._sum_loss += self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
 					self._num += tf.reduce_sum(tDimSplits[gpu_idx][:,2])
 
@@ -106,20 +108,28 @@ class Model:
 			if self._use_valid_set:
 				self._loss_valid = self._sum_loss_valid / tf.to_float(self._num_valid)
 
-	def _build_forward_pass_graph(self, x, x_length):
+	def _build_forward_pass_graph(self, x_rnn, x_ff, x_length):
 		with tf.variable_scope('{}_layer'.format(self._config['cell_type'])):
 			rnn_cell = create_rnn_cell(
 				cell_type=self._config['cell_type'],
-				num_units=self._config['num_units'],
-				num_layers=self._config['num_layers'],
+				num_units=self._config['num_units_rnn'],
+				num_layers=self._config['num_layers_rnn'],
 				dp_input_keep_prob=self._config['dropout'],
 				dp_output_keep_prob=1.0,
 				activation=self._config['activation'] if 'activation' in self._config else None)
-			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x, sequence_length=x_length, dtype=tf.float32)
+			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 
-		with tf.variable_scope('output_layer'):
+		ts = tf.shape(outputs)[1]
+		outputs = tf.concat([outputs, tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])])
+
+		for l in range(self._config['num_layers_ff']):
+			with tf.variable_scope('FF_layer_%d' %l):
+				layer_l = Dense(units=self._config['num_units_ff'][l], activation=tf.nn.relu)
+				outputs = tf.nn.dropout(layer_l(inputs), self._config['dropout'])
+
+		with tf.variable_scope('Output_layer'):
 			layer = Dense(units=self._config['num_category'])
-			logits = layer(outputs)
+			logits = layer(outputs)			
 
 		return logits
 

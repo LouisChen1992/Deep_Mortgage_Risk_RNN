@@ -2,7 +2,7 @@ import os
 import copy
 import json
 import numpy as np
-from .utils import weighted_choice
+from .utils import weighted_choice, create_file_dict
 
 class DataInRamInputLayer():
 	def __init__(self, path, shuffle=True, load_file_list=True, selected_int=False, selected_float=False):
@@ -39,49 +39,56 @@ class DataInRamInputLayer():
 			self._outcome_count = len(self._outcome2idx.keys())
 
 	def _create_file_list(self):
-		loanID_list = []
-		X_int_list = []
-		X_float_list = []
-		outcome_list = []
-		tDimSplit_list = []
+		# loanID_list = []
+		# X_int_list = []
+		# X_float_list = []
+		# outcome_list = []
+		# tDimSplit_list = []
 
-		for file in os.listdir(self._path):
-			if file.startswith('loanID_np'):
-				loanID_list.append(file)
-			elif file.startswith('X_data_np_int'):
-				X_int_list.append(file)
-			elif file.startswith('X_data_np_float'):
-				X_float_list.append(file)
-			elif file.startswith('outcome_data_np'):
-				outcome_list.append(file)
-			elif file.startswith('tDimSplit_np'):
-				tDimSplit_list.append(file)
+		# for file in os.listdir(self._path):
+		# 	if file.startswith('loanID_np'):
+		# 		loanID_list.append(file)
+		# 	elif file.startswith('X_data_np_int'):
+		# 		X_int_list.append(file)
+		# 	elif file.startswith('X_data_np_float'):
+		# 		X_float_list.append(file)
+		# 	elif file.startswith('outcome_data_np'):
+		# 		outcome_list.append(file)
+		# 	elif file.startswith('tDimSplit_np'):
+		# 		tDimSplit_list.append(file)
 
-		self._buckets = list(set(map(lambda s: s.split('_')[2], loanID_list)))
+		# self._buckets = list(set(map(lambda s: s.split('_')[2], loanID_list)))
 
-		self._bucket_loanID = {bucket:[] for bucket in self._buckets}
-		self._bucket_X_int = {bucket:[] for bucket in self._buckets}
-		self._bucket_X_float = {bucket:[] for bucket in self._buckets}
-		self._bucket_outcome = {bucket:[] for bucket in self._buckets}
-		self._bucket_tDimSplit = {bucket:[] for bucket in self._buckets}
+		# self._bucket_loanID = {bucket:[] for bucket in self._buckets}
+		# self._bucket_X_int = {bucket:[] for bucket in self._buckets}
+		# self._bucket_X_float = {bucket:[] for bucket in self._buckets}
+		# self._bucket_outcome = {bucket:[] for bucket in self._buckets}
+		# self._bucket_tDimSplit = {bucket:[] for bucket in self._buckets}
 
-		for file in loanID_list:
-			self._bucket_loanID[file.split('_')[2]].append(file)
-		for file in X_int_list:
-			self._bucket_X_int[file.split('_')[4]].append(file)
-		for file in X_float_list:
-			self._bucket_X_float[file.split('_')[4]].append(file)
-		for file in outcome_list:
-			self._bucket_outcome[file.split('_')[3]].append(file)
-		for file in tDimSplit_list:
-			self._bucket_tDimSplit[file.split('_')[2]].append(file)
+		# for file in loanID_list:
+		# 	self._bucket_loanID[file.split('_')[2]].append(file)
+		# for file in X_int_list:
+		# 	self._bucket_X_int[file.split('_')[4]].append(file)
+		# for file in X_float_list:
+		# 	self._bucket_X_float[file.split('_')[4]].append(file)
+		# for file in outcome_list:
+		# 	self._bucket_outcome[file.split('_')[3]].append(file)
+		# for file in tDimSplit_list:
+		# 	self._bucket_tDimSplit[file.split('_')[2]].append(file)
 
-		for bucket in self._buckets:
-			self._bucket_loanID[bucket] = sorted(self._bucket_loanID[bucket])
-			self._bucket_X_int[bucket] = sorted(self._bucket_X_int[bucket])
-			self._bucket_X_float[bucket] = sorted(self._bucket_X_float[bucket])
-			self._bucket_outcome[bucket] = sorted(self._bucket_outcome[bucket])
-			self._bucket_tDimSplit[bucket] = sorted(self._bucket_tDimSplit[bucket])
+		# for bucket in self._buckets:
+		# 	self._bucket_loanID[bucket] = sorted(self._bucket_loanID[bucket])
+		# 	self._bucket_X_int[bucket] = sorted(self._bucket_X_int[bucket])
+		# 	self._bucket_X_float[bucket] = sorted(self._bucket_X_float[bucket])
+		# 	self._bucket_outcome[bucket] = sorted(self._bucket_outcome[bucket])
+		# 	self._bucket_tDimSplit[bucket] = sorted(self._bucket_tDimSplit[bucket])
+
+		bucket_data, self._buckets = create_file_dict(self._path)
+		self._bucket_loanID = bucket_data['loanID']
+		self._bucket_X_int[bucket] = bucket_data['X_int']
+		self._bucket_X_float[bucket] = bucket_data['X_float']
+		self._bucket_outcome[bucket] = bucket_data['outcome']
+		self._bucket_tDimSplit[bucket] = bucket_data['tDimSplit']
 
 		self._bucket_count = {bucket:len(self._bucket_loanID[bucket]) for bucket in self._buckets}
 		self._bucket_outseq = {bucket:np.arange(self._bucket_count[bucket]) for bucket in self._buckets}
@@ -107,10 +114,19 @@ class DataInRamInputLayer():
 			tDimSplit = np.load(os.path.join(self._path, self._bucket_tDimSplit[bucket][idx_file]))
 
 			if self._selected_int and self._selected_float:
-				X_int = X_int[:,:,self._selected_int]
-				X_float = X_float[:,:,self._selected_float]
+				selected_int_FF = [i for i in range(self._covariate_count_int) if i not in selected_int]
+				selected_float_FF = [i for i in range(self._covariate_count_float) if i not in selected_float]
+				X_int_RNN = X_int[:,:,self._selected_int]
+				X_float_RNN = X_float[:,:,self._selected_float]
+				X_int_FF = X_int[:,:,selected_int_FF]
+				X_float_FF = X_float[:,:,selected_float_FF]
+			else:
+				X_int_RNN = X_int
+				X_float_RNN = X_float
+				X_int_FF = X_int[:,:,[]]
+				X_float_FF = X_float[:,:,[]]
 
-			num_example = X_int.shape[0]
+			num_example = X_int_RNN.shape[0]
 			num_batch = num_example // batch_size
 			idx_example = np.arange(num_example)
 			if self._shuffle:
@@ -121,12 +137,15 @@ class DataInRamInputLayer():
 				batch_end = (idx_batch+1)*batch_size
 
 				idx_input = idx_example[batch_start:batch_end]
-				X_int_input = X_int[idx_input]
-				X_float_input = X_float[idx_input]
-				X_input = np.concatenate((X_int_input, X_float_input), axis=2)
+				X_int_RNN_input = X_int_RNN[idx_input]
+				X_float_RNN_input = X_float_RNN[idx_input]
+				X_int_FF_input = X_int_FF[idx_input]
+				X_float_FF_input = X_float_FF[idx_input]
+				X_RNN_input = np.concatenate((X_int_RNN_input, X_float_RNN_input), axis=2)
+				X_FF_input = np.concatenate((X_int_FF_input, X_float_FF_input), axis=2)
 				Y_input = outcome[idx_input]
 				tDimSplit_input = tDimSplit[idx_input]
-				yield X_input, Y_input, tDimSplit_input, current_count / total_count
+				yield X_RNN_input, X_FF_input, Y_input, tDimSplit_input, current_count / total_count
 
 			bucket_count_left[bucket] -= 1
 			bucket_idx[bucket] += 1

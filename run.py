@@ -96,14 +96,6 @@ with tf.Session(config=sess_config) as sess:
 					model._y_placeholder:Y, 
 					model._tDimSplit_placeholder:tDimSplit}
 
-				### debug
-				test1, test2, test3 = sess.run(fetches=[model._test1, model._test2, model._test3], feed_dict=feed_dict)
-				print(test1)
-				print(test2.shape)
-				print(test3.shape)
-				input()
-				### debug
-
 				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
 				total_loss += loss_i
 				count += 1

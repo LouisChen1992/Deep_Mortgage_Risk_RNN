@@ -124,7 +124,7 @@ class Model:
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):
 				layer_l = Dense(units=self._config['num_units_ff'][l], activation=tf.nn.relu)
-				outputs = tf.nn.dropout(layer_l(inputs), self._config['dropout'])
+				outputs = tf.nn.dropout(layer_l(outputs), self._config['dropout'])
 
 		with tf.variable_scope('Output_layer'):
 			layer = Dense(units=self._config['num_category'])

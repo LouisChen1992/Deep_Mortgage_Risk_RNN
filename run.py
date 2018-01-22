@@ -32,6 +32,8 @@ if 'selected_covariate_file_int' in config and config['selected_covariate_file_i
 else:
 	selected_int = False
 	selected_float = False
+	config['feature_dim_rnn'] = 291
+	config['feature_dim_ff'] = 0
 deco_print('Read Following Config')
 deco_print_dict(config)
 ###

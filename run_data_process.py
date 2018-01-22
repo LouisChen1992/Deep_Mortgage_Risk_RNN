@@ -329,35 +329,86 @@ elif args.dataset == 'prime':
 elif args.dataset == 'all':
 	path_prime_subprime = os.path.join(path, 'data/RNNdata')
 	path_src = os.path.join(path_prime_subprime, 'subprime_new')
-	path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new')
+	path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new_test') ### test only!!!
+	# path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new')
 
 	bucket_data_src, buckets = create_file_dict(path_src) # subprime data
 	bucket_data_tgt, _ = create_file_dict(path_tgt) # prime data
-	num_bucket = {bucket:len(bucket_data_tgt['loanID'][bucket]) for bucket in buckets}
+	num_bucket_src = {bucket:len(bucket_data_src['loanID'][bucket]) for bucket in buckets}
+	num_bucket_tgt = {bucket:len(bucket_data_tgt['loanID'][bucket]) for bucket in buckets}
 
-	for bucket in buckets:
+	time_start = time.time()
+
+	for i in range(len(buckets)):
+		bucket = buckets[i]
 		print('Processing bucket %s...' %bucket)
-		loanID = np.empty((0,), dtype='S8')
-		X_int = np.empty((0, int(bucket), 239), dtype='int8')
-		X_float = np.empty((0, int(bucket), 54), dtype='float32')
-		outcome = np.empty((0, int(bucket)), dtype='int64')
-		tDimSplit = np.empty((0, 3), dtype='int16')
+		loanID_src = np.empty((0,), dtype='S8')
+		X_int_src = np.empty((0, int(bucket), 239), dtype='int8')
+		X_float_src = np.empty((0, int(bucket), 54), dtype='float32')
+		outcome_src = np.empty((0, int(bucket)), dtype='int64')
+		tDimSplit_src = np.empty((0, 3), dtype='int16')
+
+		count_file = 0
 		for (loanID_file, X_int_file, X_float_file, outcome_file, tDimSplit_file) in \
 			zip(bucket_data_src['loanID'][bucket], bucket_data_src['X_int'][bucket], bucket_data_src['X_float'][bucket], bucket_data_src['outcome'][bucket], bucket_data_src['tDimSplit'][bucket]):
-			print('%s\n%s\n%s\n%s\n%s' %(loanID_file, X_int_file, X_float_file, outcome_file, tDimSplit_file))
-			input()
+
 			loanID_new = np.load(os.path.join(path_src, loanID_file))
 			X_int_new = np.load(os.path.join(path_src, X_int_file))
 			X_float_new = np.load(os.path.join(path_src, X_float_file))
 			outcome_new = np.load(os.path.join(path_src, outcome_file))
 			tDimSplit_new = np.load(os.path.join(path_src, tDimSplit_file))
-			loanID = np.append(loanID, loanID_new, axis=0)
-			X_int = np.append(X_int, X_int_new, axis=0)
-			X_float = np.append(X_float, X_float_new, axis=0)
-			outcome = np.append(outcome, outcome_new, axis=0)
-			tDimSplit = np.append(tDimSplit, tDimSplit_new, axis=0)
-			print(loanID.shape)
-			print('Finished loading %s! ' %loanID_file, end='\r')
-			
+
+			loanID_src = np.append(loanID_src, loanID_new, axis=0)
+			X_int_src = np.append(X_int_src, X_int_new, axis=0)
+			X_float_src = np.append(X_float_src, X_float_new, axis=0)
+			outcome_src = np.append(outcome_src, outcome_new, axis=0)
+			tDimSplit_src = np.append(tDimSplit_src, tDimSplit_new, axis=0)
+
+			count_file += 1
+			print('Finished loading %s! %d / %d' %(loanID_file, count_file, num_bucket_src[bucket]), end='\r')
+			### test only
+			if count_file == 3:
+				break
+			###
+		print('Finished loading data with bucket %s!                               ' %bucket)
+		idx_tgt = np.random.choice(num_bucket_tgt[bucket], len(loanID_src))
+		
+		for idx in range(num_bucket_tgt[bucket]):
+			print('Writing to bucket %d / %d...' %(idx, num_bucket_tgt[bucket]), end='\r')
+
+			path_loanID = os.path.join(path_tgt, 'loanID_np_%d_%d.npy' %(bucket, idx))
+			loanID = np.load(path_loanID)
+			loanID = np.append(loanID, loanID_src[idx_tgt==idx], axis=0)
+			np.save(path_loanID, loanID)
+			loanID = None
+
+			path_X_int = os.path.join(path_tgt, 'X_data_np_int_%d_%d.npy' %(bucket, idx))
+			X_int = np.load(path_X_int)
+			X_int = np.append(X_int, X_int_src[idx_tgt==idx], axis=0)
+			np.save(path_X_int, X_int)
+			X_int = None
+
+			path_X_float = os.path.join(path_tgt, 'X_data_np_float_%d_%d.npy' %(bucket, idx))
+			X_float = np.load(path_X_float)
+			X_float = np.append(X_float, X_float_src[idx_tgt==idx], axis=0)
+			np.save(path_X_float, X_float)
+			X_float = None
+
+			path_outcome = os.path.join(path_tgt, 'outcome_data_np_%d_%d.npy' %(bucket, idx))
+			outcome = np.load(path_outcome)
+			outcome = np.append(outcome, outcome_src[idx_tgt==idx], axis=0)
+			np.save(path_outcome, outcome)
+			outcome = None
+
+			path_tDimSplit = os.path.join(path_tgt, 'tDimSplit_np_%d_%d.npy' %(bucket, idx))
+			tDimSplit = np.load(path_tDimSplit)
+			tDimSplit = np.append(tDimSplit, tDimSplit_src[idx_tgt==idx], axis=0)
+			np.save(path_tDimSplit, tDimSplit)
+			tDimSplit = None
+
+		time_elapse = time.time() - time_start
+		time_estimate = time_elapse / (i+1) * len(buckets)
+		print('Finished data with bucket %s! \t Elapse/Estimate: %0.2fs / %0.2fs' %(bucket, time_elapse, time_estimate))
+
 else:
 	raise ValueError('Dataset Not Found! ')

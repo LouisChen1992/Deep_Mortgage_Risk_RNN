@@ -380,31 +380,31 @@ elif args.dataset == 'all':
 		for idx in range(num_bucket_tgt[bucket]):
 			print('Writing to bucket %d / %d...' %(idx, num_bucket_tgt[bucket]), end='\r')
 
-			path_loanID = os.path.join(path_tgt, 'loanID_np_%d_%d.npy' %(bucket, idx))
+			path_loanID = os.path.join(path_tgt, 'loanID_np_%s_%d.npy' %(bucket, idx))
 			loanID = np.load(path_loanID)
 			loanID = np.append(loanID, loanID_src[idx_tgt==idx], axis=0)
 			np.save(path_loanID, loanID)
 			loanID = None
 
-			path_X_int = os.path.join(path_tgt, 'X_data_np_int_%d_%d.npy' %(bucket, idx))
+			path_X_int = os.path.join(path_tgt, 'X_data_np_int_%s_%d.npy' %(bucket, idx))
 			X_int = np.load(path_X_int)
 			X_int = np.append(X_int, X_int_src[idx_tgt==idx], axis=0)
 			np.save(path_X_int, X_int)
 			X_int = None
 
-			path_X_float = os.path.join(path_tgt, 'X_data_np_float_%d_%d.npy' %(bucket, idx))
+			path_X_float = os.path.join(path_tgt, 'X_data_np_float_%s_%d.npy' %(bucket, idx))
 			X_float = np.load(path_X_float)
 			X_float = np.append(X_float, X_float_src[idx_tgt==idx], axis=0)
 			np.save(path_X_float, X_float)
 			X_float = None
 
-			path_outcome = os.path.join(path_tgt, 'outcome_data_np_%d_%d.npy' %(bucket, idx))
+			path_outcome = os.path.join(path_tgt, 'outcome_data_np_%s_%d.npy' %(bucket, idx))
 			outcome = np.load(path_outcome)
 			outcome = np.append(outcome, outcome_src[idx_tgt==idx], axis=0)
 			np.save(path_outcome, outcome)
 			outcome = None
 
-			path_tDimSplit = os.path.join(path_tgt, 'tDimSplit_np_%d_%d.npy' %(bucket, idx))
+			path_tDimSplit = os.path.join(path_tgt, 'tDimSplit_np_%s_%d.npy' %(bucket, idx))
 			tDimSplit = np.load(path_tDimSplit)
 			tDimSplit = np.append(tDimSplit, tDimSplit_src[idx_tgt==idx], axis=0)
 			np.save(path_tDimSplit, tDimSplit)

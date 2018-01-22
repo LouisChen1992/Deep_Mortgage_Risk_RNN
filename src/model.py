@@ -124,7 +124,7 @@ class Model:
 		# x_ff_slice.set_shape([x_ff.get_shape()[0],None,x_ff.get_shape()[2]])
 
 		### debug
-		self._test1 = outputs
+		self._test1 = tf.reduce_max(x_length)
 		self._test2 = outputs
 		self._test3 = x_ff
 		###

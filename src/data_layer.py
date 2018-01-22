@@ -85,10 +85,10 @@ class DataInRamInputLayer():
 
 		bucket_data, self._buckets = create_file_dict(self._path)
 		self._bucket_loanID = bucket_data['loanID']
-		self._bucket_X_int[bucket] = bucket_data['X_int']
-		self._bucket_X_float[bucket] = bucket_data['X_float']
-		self._bucket_outcome[bucket] = bucket_data['outcome']
-		self._bucket_tDimSplit[bucket] = bucket_data['tDimSplit']
+		self._bucket_X_int = bucket_data['X_int']
+		self._bucket_X_float = bucket_data['X_float']
+		self._bucket_outcome = bucket_data['outcome']
+		self._bucket_tDimSplit = bucket_data['tDimSplit']
 
 		self._bucket_count = {bucket:len(self._bucket_loanID[bucket]) for bucket in self._buckets}
 		self._bucket_outseq = {bucket:np.arange(self._bucket_count[bucket]) for bucket in self._buckets}

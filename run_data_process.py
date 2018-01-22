@@ -30,7 +30,7 @@ def create_file_dict(path):
 
 	for file in os.listdir(path):
 		if file.startswith('loanID_np'):
-			lonaID_list.append(file)
+			loanID_list.append(file)
 		elif file.startswith('X_data_np_int'):
 			X_int_list.append(file)
 		elif file.startswith('X_data_np_float'):

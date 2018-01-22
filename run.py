@@ -98,7 +98,7 @@ with tf.Session(config=sess_config) as sess:
 
 				### debug
 				test1, test2, test3 = sess.run(fetches=[model._test1, model._test2, model._test3], feed_dict=feed_dict)
-				print(test1.shape)
+				print(test1)
 				print(test2.shape)
 				print(test3.shape)
 				input()

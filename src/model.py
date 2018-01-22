@@ -119,7 +119,16 @@ class Model:
 				activation=self._config['activation'] if 'activation' in self._config else None)
 			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 
-		outputs = tf.concat([outputs, x_ff], axis=2)
+		ts = tf.reduce_max(x_length)
+		outputs_shape = outputs.get_shape()
+		x_ff_shape = x_ff.get_shape()
+		outputs_slice = tf.slice(outputs, begin=[0,0,0], size=[-1,ts,-1])
+		x_ff_slice = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
+
+		outputs = tf.concat([outputs_slice, x_ff_slice], axis=2)
+		outputs.set_shape([outputs_shape[0], None, outputs_shape[2]+x_ff_shape[2]])
+
+		# outputs = tf.concat([outputs, x_ff], axis=2)
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):

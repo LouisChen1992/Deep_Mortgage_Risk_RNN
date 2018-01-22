@@ -329,8 +329,7 @@ elif args.dataset == 'prime':
 elif args.dataset == 'all':
 	path_prime_subprime = os.path.join(path, 'data/RNNdata')
 	path_src = os.path.join(path_prime_subprime, 'subprime_new')
-	path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new_test') ### test only!!!
-	# path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new')
+	path_tgt = os.path.join(path_prime_subprime, 'prime_subprime_new')
 
 	bucket_data_src, buckets = create_file_dict(path_src) # subprime data
 	bucket_data_tgt, _ = create_file_dict(path_tgt) # prime data
@@ -366,16 +365,9 @@ elif args.dataset == 'all':
 
 			count_file += 1
 			print('Finished loading %s! %d / %d' %(loanID_file, count_file, num_bucket_src[bucket]), end='\r')
-			### test only
-			if count_file == 3:
-				break
-			###
+
 		print('Finished loading data with bucket %s!                               ' %bucket)
 		idx_tgt = np.random.choice(num_bucket_tgt[bucket], len(loanID_src))
-		
-		###
-		input()
-		###
 
 		for idx in range(num_bucket_tgt[bucket]):
 			print('Writing to bucket %d / %d...' %(idx, num_bucket_tgt[bucket]), end='\r')

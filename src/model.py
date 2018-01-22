@@ -120,7 +120,7 @@ class Model:
 			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 
 		ts = tf.shape(outputs)[1]
-		outputs = tf.concat([outputs, tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])], axis=2)
+		outputs = tf.concat([outputs, tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,self._config['feature_dim_ff']])], axis=2)
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):

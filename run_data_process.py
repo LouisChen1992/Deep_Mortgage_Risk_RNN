@@ -338,14 +338,26 @@ elif args.dataset == 'all':
 	for bucket in buckets:
 		print('Processing bucket %s...' %bucket)
 		loanID = np.empty((0,), dtype='S8')
-		X_int = np.empty((0, lValue, 239), dtype='int8')
-		X_float = np.empty((0, lValue, 54), dtype='float32')
-		outcome = np.empty((0, lValue), dtype='int64')
+		X_int = np.empty((0, int(bucket), 239), dtype='int8')
+		X_float = np.empty((0, int(bucket), 54), dtype='float32')
+		outcome = np.empty((0, int(bucket)), dtype='int64')
 		tDimSplit = np.empty((0, 3), dtype='int16')
 		for (loanID_file, X_int_file, X_float_file, outcome_file, tDimSplit_file) in \
-			zip(bucket_data_src['loanID'], bucket_data_src['X_int'], bucket_data_src['X_float'], bucket_data_src['outcome'], bucket_data_src['tDimSplit']):
+			zip(bucket_data_src['loanID'][bucket], bucket_data_src['X_int'][bucket], bucket_data_src['X_float'][bucket], bucket_data_src['outcome'][bucket], bucket_data_src['tDimSplit'][bucket]):
 			print('%s\n%s\n%s\n%s\n%s' %(loanID_file, X_int_file, X_float_file, outcome_file, tDimSplit_file))
-			print('Finished loading %s! ' %loanID_file, end='\r')
 			input()
+			loanID_new = np.load(os.path.join(path_src, loanID_file))
+			X_int_new = np.load(os.path.join(path_src, X_int_file))
+			X_float_new = np.load(os.path.join(path_src, X_float_file))
+			outcome_new = np.load(os.path.join(path_src, outcome_file))
+			tDimSplit_new = np.load(os.path.join(path_src, tDimSplit_file))
+			loanID = np.append(loanID, loanID_new, axis=0)
+			X_int = np.append(X_int, X_int_new, axis=0)
+			X_float = np.append(X_float, X_float_new, axis=0)
+			outcome = np.append(outcome, outcome_new, axis=0)
+			tDimSplit = np.append(tDimSplit, tDimSplit_new, axis=0)
+			print(loanID.shape)
+			print('Finished loading %s! ' %loanID_file, end='\r')
+			
 else:
 	raise ValueError('Dataset Not Found! ')

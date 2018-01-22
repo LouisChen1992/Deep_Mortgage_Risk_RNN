@@ -122,11 +122,15 @@ class Model:
 		ts = tf.shape(outputs)[1]
 		outputs = tf.concat([outputs, tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,self._config['feature_dim_ff']])], axis=2)
 
+		print(outputs)
+
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):
 				layer_l = Dense(units=self._config['num_units_ff'][l], activation=tf.nn.relu)
 				outputs = tf.nn.dropout(layer_l(inputs), self._config['dropout'])
 
+		print(outputs)
+		
 		with tf.variable_scope('Output_layer'):
 			layer = Dense(units=self._config['num_category'])
 			logits = layer(outputs)			

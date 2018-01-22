@@ -119,23 +119,12 @@ class Model:
 				activation=self._config['activation'] if 'activation' in self._config else None)
 			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 
-		ts = tf.reduce_max(x_length)
-		inputs_x_ff = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
-
-		print(outputs)
-		print(x_ff)
-		print(inputs_x_ff)
-
-		outputs = tf.concat([outputs, inputs_x_ff], axis=2)
-
-		print(outputs)
+		outputs = tf.concat([outputs, x_ff], axis=2)
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):
 				layer_l = Dense(units=self._config['num_units_ff'][l], activation=tf.nn.relu)
 				outputs = tf.nn.dropout(layer_l(inputs), self._config['dropout'])
-
-		print(outputs)
 
 		with tf.variable_scope('Output_layer'):
 			layer = Dense(units=self._config['num_category'])

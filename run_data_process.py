@@ -373,6 +373,10 @@ elif args.dataset == 'all':
 		print('Finished loading data with bucket %s!                               ' %bucket)
 		idx_tgt = np.random.choice(num_bucket_tgt[bucket], len(loanID_src))
 		
+		###
+		input()
+		###
+
 		for idx in range(num_bucket_tgt[bucket]):
 			print('Writing to bucket %d / %d...' %(idx, num_bucket_tgt[bucket]), end='\r')
 

@@ -63,6 +63,7 @@ class Model:
 		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim_ff']], name='input_placeholder')
 		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], None], name='output_placeholder')
 		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], 3])
+		self._bucket_placeholder = tf.placeholder(dtype=tf.int32, shape=[1], name='bucket_placeholder')
 
 		xs_rnn = tf.split(value=self._x_rnn_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		xs_ff = tf.split(value=self._x_ff_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
@@ -120,7 +121,7 @@ class Model:
 			# outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 			outputs, state = tf.nn.static_rnn(
 				cell=rnn_cell,
-				inputs=tf.split(x_rnn, num_or_size_splits=tf.shape(x_rnn)[1], axis=1),
+				inputs=tf.split(x_rnn, num_or_size_splits=self._bucket_placeholder, axis=1),
 				dtype=tf.float32)
 
 		outputs = tf.concat([outputs, x_ff], axis=2)

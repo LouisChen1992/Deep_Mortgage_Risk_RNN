@@ -145,7 +145,7 @@ class DataInRamInputLayer():
 				X_FF_input = np.concatenate((X_int_FF_input, X_float_FF_input), axis=2)
 				Y_input = outcome[idx_input]
 				tDimSplit_input = tDimSplit[idx_input]
-				yield X_RNN_input, X_FF_input, Y_input, tDimSplit_input, current_count / total_count
+				yield X_RNN_input, X_FF_input, Y_input, tDimSplit_input, int(bucket), current_count / total_count
 
 			bucket_count_left[bucket] -= 1
 			bucket_idx[bucket] += 1

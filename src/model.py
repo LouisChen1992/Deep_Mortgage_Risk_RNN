@@ -120,7 +120,12 @@ class Model:
 			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 
 		ts = tf.shape(outputs)[1]
-		outputs = tf.concat([outputs, tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])], axis=2)
+		inputs_x_ff = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
+
+		print(outputs)
+		print(inputs_x_ff)
+
+		outputs = tf.concat([outputs, inputs_x_ff], axis=2)
 
 		print(outputs)
 

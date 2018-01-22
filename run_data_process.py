@@ -5,7 +5,7 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='Generate random buckets. ')
 parser.add_argument('--dataset', help='prime/subprime/all')
-parser.add_argument('--bucket', help='50/75/100/150/200')
+parser.add_argument('--bucket', help='5/10/15/20/...')
 args = parser.parse_args()
 
 def longitudinal_separation(lValue, tValue, sep=[121,281,287,306]):
@@ -26,7 +26,7 @@ def create_file_dict(path):
 	X_int_list = []
 	X_float_list = []
 	outcome_list = []
-	tDimSplit_lsit = []
+	tDimSplit_list = []
 
 	for file in os.listdir(path):
 		if file.startswith('loanID_np'):

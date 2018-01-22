@@ -117,7 +117,11 @@ class Model:
 				dp_input_keep_prob=self._config['dropout'],
 				dp_output_keep_prob=1.0,
 				activation=self._config['activation'] if 'activation' in self._config else None)
-			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
+			# outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
+			outputs, state = tf.nn.static_rnn(
+				cell=rnn_cell,
+				inputs=tf.split(x_rnn, num_or_size_splits=tf.shape(x_rnn)[1], axis=1),
+				dtype=tf.float32)
 
 		outputs = tf.concat([outputs, x_ff], axis=2)
 

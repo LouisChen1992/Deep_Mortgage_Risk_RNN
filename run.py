@@ -89,13 +89,12 @@ with tf.Session(config=sess_config) as sess:
 			### SGD step
 			total_loss = 0.0
 			count = 0
-			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+			for i, (X_RNN, X_FF, Y, tDimSplit, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
 				feed_dict = {
 					model._x_rnn_placeholder:X_RNN, 
 					model._x_ff_placeholder:X_FF,
 					model._y_placeholder:Y, 
-					model._tDimSplit_placeholder:tDimSplit,
-					model._bucket_placeholder:bucket}
+					model._tDimSplit_placeholder:tDimSplit}
 				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
 				total_loss += loss_i
 				count += 1
@@ -114,13 +113,12 @@ with tf.Session(config=sess_config) as sess:
 				total_valid_loss = 0.0
 				count_valid = 0
 
-			for i, (X, X_FF, Y, tDimSplit, bucket, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+			for i, (X, X_FF, Y, tDimSplit, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
 				feed_dict = {
 					model._x_rnn_placeholder:X_RNN, 
 					model._x_ff_placeholder:X_FF,
 					model._y_placeholder:Y, 
-					model._tDimSplit_placeholder:tDimSplit,
-					model._bucket_placeholder:bucket}
+					model._tDimSplit_placeholder:tDimSplit}
 				if FLAGS.mode == 'train':
 					loss_i, num_i = sess.run(fetches=[model._sum_loss, model._num], feed_dict=feed_dict)
 					total_train_loss += loss_i

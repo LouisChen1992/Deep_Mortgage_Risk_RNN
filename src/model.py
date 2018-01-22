@@ -123,6 +123,7 @@ class Model:
 		inputs_x_ff = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
 
 		print(outputs)
+		print(x_ff)
 		print(inputs_x_ff)
 
 		outputs = tf.concat([outputs, inputs_x_ff], axis=2)

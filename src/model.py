@@ -118,13 +118,17 @@ class Model:
 				dp_input_keep_prob=self._config['dropout'],
 				dp_output_keep_prob=1.0,
 				activation=self._config['activation'] if 'activation' in self._config else None)
-			# outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
-			outputs, state = tf.nn.static_rnn(
-				cell=rnn_cell,
-				inputs=tf.split(x_rnn, num_or_size_splits=self._bucket_placeholder, axis=1),
-				dtype=tf.float32)
+			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
+			# outputs, state = tf.nn.static_rnn(
+			# 	cell=rnn_cell,
+			# 	inputs=tf.split(x_rnn, num_or_size_splits=self._bucket_placeholder, axis=1),
+			# 	dtype=tf.float32)
 
-		outputs = tf.concat([outputs, x_ff], axis=2)
+		ts = tf.reduce_max(x_length)
+		x_ff_slice = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
+		x_ff_slice.set_shape([x_ff.get_shape()[0],None,x_ff.get_shape()[2]])
+
+		outputs = tf.concat([outputs, x_ff_slice], axis=2)
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):

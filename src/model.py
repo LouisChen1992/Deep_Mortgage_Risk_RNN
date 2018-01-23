@@ -128,7 +128,7 @@ class Model:
 			# outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
 
 			outputs = tf.pad(rnn_outputs, [[0,0],[0,self._bucket_placeholder-tf.shape(rnn_outputs)[1]],[0,0]])
-			outputs = concat([outputs, x_ff], axis=2)
+			outputs = tf.concat([outputs, x_ff], axis=2)
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):

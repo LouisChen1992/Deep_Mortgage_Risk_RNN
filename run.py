@@ -115,7 +115,7 @@ with tf.Session(config=sess_config) as sess:
 				total_valid_loss = 0.0
 				count_valid = 0
 
-			for i, (X, X_FF, Y, tDimSplit, bucket, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
 				feed_dict = {
 					model._x_rnn_placeholder:X_RNN, 
 					model._x_ff_placeholder:X_FF,

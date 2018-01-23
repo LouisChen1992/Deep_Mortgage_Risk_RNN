@@ -110,26 +110,29 @@ class Model:
 				self._loss_valid = self._sum_loss_valid / tf.to_float(self._num_valid)
 
 	def _build_forward_pass_graph(self, x_rnn, x_ff, x_length):
-		with tf.variable_scope('{}_layer'.format(self._config['cell_type'])):
-			rnn_cell = create_rnn_cell(
-				cell_type=self._config['cell_type'],
-				num_units=self._config['num_units_rnn'],
-				num_layers=self._config['num_layers_rnn'],
-				dp_input_keep_prob=self._config['dropout'],
-				dp_output_keep_prob=1.0,
-				activation=self._config['activation'] if 'activation' in self._config else None)
-			rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
+		if self._config['num_layers_rnn'] != 0:
+			with tf.variable_scope('{}_layer'.format(self._config['cell_type'])):
+				rnn_cell = create_rnn_cell(
+					cell_type=self._config['cell_type'],
+					num_units=self._config['num_units_rnn'],
+					num_layers=self._config['num_layers_rnn'],
+					dp_input_keep_prob=self._config['dropout'],
+					dp_output_keep_prob=1.0,
+					activation=self._config['activation'] if 'activation' in self._config else None)
+				rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 
-			# ts = tf.to_int32(tf.minimum(tf.shape(rnn_outputs)[1], tf.shape(x_ff)[1]))
-			# rnn_outputs_slice = tf.slice(rnn_outputs, begin=[0,0,0], size=[-1,ts,-1])
-			# x_ff_slice = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
+				# ts = tf.to_int32(tf.minimum(tf.shape(rnn_outputs)[1], tf.shape(x_ff)[1]))
+				# rnn_outputs_slice = tf.slice(rnn_outputs, begin=[0,0,0], size=[-1,ts,-1])
+				# x_ff_slice = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
 
-			# outputs = tf.concat([rnn_outputs_slice, x_ff_slice], axis=2)
-			# outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
+				# outputs = tf.concat([rnn_outputs_slice, x_ff_slice], axis=2)
+				# outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
 
-			outputs = tf.pad(rnn_outputs, [[0,0],[0,self._bucket_placeholder-tf.shape(rnn_outputs)[1]],[0,0]])
-			outputs = tf.concat([outputs, x_ff], axis=2)
-			outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
+				outputs = tf.pad(rnn_outputs, [[0,0],[0,self._bucket_placeholder-tf.shape(rnn_outputs)[1]],[0,0]])
+				outputs = tf.concat([outputs, x_ff], axis=2)
+				outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
+		else:
+			outputs = tf.concat([x_rnn, x_ff], axis=2)
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):

@@ -117,18 +117,14 @@ class Model:
 				dp_input_keep_prob=self._config['dropout'],
 				dp_output_keep_prob=1.0,
 				activation=self._config['activation'] if 'activation' in self._config else None)
-			outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
+			rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
 
-		ts = tf.reduce_max(x_length)
-		outputs_shape = outputs.get_shape()
-		x_ff_shape = x_ff.get_shape()
-		outputs_slice = tf.slice(outputs, begin=[0,0,0], size=[-1,ts,-1])
-		x_ff_slice = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
+			ts = tf.to_int32(tf.minimum(tf.shape(rnn_outputs)[1], tf.shape(x_ff)[1]))
+			rnn_outputs_slice = tf.slice(rnn_outputs, begin=[0,0,0], size=[-1,ts,-1])
+			x_ff_slice = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
 
-		outputs = tf.concat([outputs_slice, x_ff_slice], axis=2)
-		outputs.set_shape([outputs_shape[0], None, outputs_shape[2]+x_ff_shape[2]])
-
-		# outputs = tf.concat([outputs, x_ff], axis=2)
+			outputs = tf.concat([rnn_outputs_slice, x_ff_slice], axis=2)
+			outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):

@@ -11,4 +11,5 @@ $ python3 python3 run_data_process.py --dataset all # merge subprime data with p
 ### Train, Validation & Test
 - Train & Validation
 ```
-$ python3 run.py --config=configs/config.json --model=valid --logdir=output --dataset=subprime
+$ python3 run.py --config=configs/config.json --mode=valid --logdir=output --dataset=subprime --num_epochs=20 --summary_frequency=1000
+```

@@ -234,7 +234,7 @@ class Model:
 			optimizer=optimizer,
 			gradient_noise_scale=None,
 			gradient_multipliers=None,
-			clip_gradients=None,
+			clip_gradients=None if 'max_grad_norm' not in self._config else self._config['max_grad_norm'],
 			learning_rate_decay_fn=learning_rate_decay_fn,
 			update_ops=None,
 			variables=None,

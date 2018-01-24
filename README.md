@@ -7,3 +7,8 @@ $ python3 python3 run_data_process.py --dataset subprime --bucket 5 # bucket siz
 $ python3 python3 run_data_process.py --dataset prime --bucket 5 # bucket size 5 for prime data
 $ python3 python3 run_data_process.py --dataset all # merge subprime data with prime data
 ```
+
+### Train, Validation & Test
+- Train & Validation
+```
+$ python3 run.py --config=configs/config.json --model=valid --logdir=output --dataset=subprime

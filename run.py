@@ -107,7 +107,7 @@ with tf.Session(config=sess_config) as sess:
 					deco_print('Training Loss Update: %f, Elapse / Estimate: %.2fs / %.2fs     ' %(total_loss/(i+1), time_last, time_est), end='\r')
 
 			time_last = time.time() - epoch_start
-			deco_print('Epoch {} Training Finished! Elapse / Estimate: %.2fs / %.2fs     ' %(epoch, time_last, time_last))
+			deco_print('Epoch %d Training Finished! Elapse / Estimate: %.2fs / %.2fs     ' %(epoch, time_last, time_last))
 
 			deco_print('Calculating Training/Validation Loss...')
 			time_start = time.time()

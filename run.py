@@ -9,6 +9,7 @@ from src.model import Model
 from src.data_layer import DataInRamInputLayer
 from src.utils import deco_print, deco_print_dict
 
+### TODO: set flags to mute summary
 tf.flags.DEFINE_string('config', '', 'Path to config file')
 tf.flags.DEFINE_string('logdir', '', 'Path to save logs and checkpoints')
 tf.flags.DEFINE_string('mode', 'valid', 'Mode: train/valid/test')
@@ -157,7 +158,7 @@ with tf.Session(config=sess_config) as sess:
 			deco_print('Did Epoch {} In {} Seconds \n'.format(epoch, epoch_end-epoch_start))
 
 	else:
-		### This part has not been de-bugged yet. 
+		### TODO: This part has not been de-bugged yet. 
 		deco_print('Executing Test Mode...\n')
 
 		time_start = time.time()

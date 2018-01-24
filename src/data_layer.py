@@ -94,6 +94,7 @@ class DataInRamInputLayer():
 		self._bucket_outseq = {bucket:np.arange(self._bucket_count[bucket]) for bucket in self._buckets}
 
 	def iterate_one_epoch(self, batch_size):
+		### TODO: when testing, use only one GPU and batch size = None
 		if self._shuffle:
 			for bucket in self._buckets:
 				np.random.shuffle(self._bucket_outseq[bucket])

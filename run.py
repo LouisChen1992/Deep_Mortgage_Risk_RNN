@@ -88,7 +88,6 @@ with tf.Session(config=sess_config) as sess:
 
 			### SGD step
 			total_loss = 0.0
-			count = 0
 			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
 				feed_dict = {
 					model._x_rnn_placeholder:X_RNN, 
@@ -98,15 +97,19 @@ with tf.Session(config=sess_config) as sess:
 
 				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
 				total_loss += loss_i
-				count += 1
-				if count % FLAGS.summary_frequency == 0:
+				if i % FLAGS.summary_frequency == 0:
 					sm, = sess.run(fetches=[summary_op], feed_dict=feed_dict)
 					sw.add_summary(sm, global_step=sess.run(model._global_step))
 					sw.flush()
 					time_last = time.time() - epoch_start
 					time_est = time_last / p
-					deco_print('Training Loss Update: %f, Elapse / Estimate: %.2fs / %.2fs     ' %(total_loss / count, time_last, time_est), end='\r')
+					deco_print('Training Loss Update: %f, Elapse / Estimate: %.2fs / %.2fs     ' %(total_loss/(i+1), time_last, time_est), end='\r')
 
+			time_last = time.time() - epoch_start
+			deco_print('Epoch {} Training Finished! Elapse / Estimate: %.2fs / %.2fs     ' %(epoch, time_last, time_last))
+
+			deco_print('Calculating Training/Validation Loss...')
+			time_start = time.time()
 			### Epoch loss summary
 			total_train_loss = 0.0
 			count_train = 0
@@ -114,7 +117,7 @@ with tf.Session(config=sess_config) as sess:
 				total_valid_loss = 0.0
 				count_valid = 0
 
-			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, _) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
 				feed_dict = {
 					model._x_rnn_placeholder:X_RNN, 
 					model._x_ff_placeholder:X_FF,
@@ -130,6 +133,10 @@ with tf.Session(config=sess_config) as sess:
 					total_valid_loss += loss_i_valid
 					count_train += num_i
 					count_valid += num_i_valid
+				if i % FLAGS.summary_frequency == 0:
+					time_last = time.time() - time_start
+					time_est = time_last / p
+					deco_print('Elapse / Estimate: %.2fs / %.2fs     ' %(time_last, time_est), end='\r')
 
 			train_loss = total_train_loss / count_train
 			deco_print('Epoch {} Training Loss: {}                              '.format(epoch, train_loss))
@@ -147,8 +154,30 @@ with tf.Session(config=sess_config) as sess:
 			deco_print('Saving Epoch Checkpoint')
 			saver.save(sess, save_path=os.path.join(FLAGS.logdir, 'model-epoch'), global_step=epoch)
 			epoch_end = time.time()
-			deco_print('Did Epoch {} In {} Seconds \n'.format(epoch, epoch_end - epoch_start))
+			deco_print('Did Epoch {} In {} Seconds \n'.format(epoch, epoch_end-epoch_start))
 
 	else:
-		pass
+		### This part has not been de-bugged yet. 
+		deco_print('Executing Test Mode...\n')
 
+		time_start = time.time()
+		total_test_loss = 0.0
+		count_test = 0
+
+		for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+			feed_dict = {
+				model._x_rnn_placeholder:X_RNN,
+				model._x_ff_placeholder:X_FF,
+				model._y_placeholder:Y,
+				model._tDimSplit_placeholder:tDimSplit}
+
+			loss_i, num_i = sess.run(fetches=[model._sum_loss, model._num], feed_dict=feed_dict)
+			total_test_loss += loss_i
+			count_test += num_i
+			if i % FLAGS.summary_frequency == 0:
+				time_last = time.time() - time_start
+				time_est = time_last / p
+				deco_print('Elapse / Estimate: %.2fs / %.2fs     ' %(time_last, time_est), end='\r')
+
+		test_loss = total_test_loss / count_test
+		deco_print('Test Loss: {}                                        '.format(test_loss))

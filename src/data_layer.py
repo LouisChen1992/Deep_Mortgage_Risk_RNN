@@ -39,50 +39,6 @@ class DataInRamInputLayer():
 			self._outcome_count = len(self._outcome2idx.keys())
 
 	def _create_file_list(self):
-		# loanID_list = []
-		# X_int_list = []
-		# X_float_list = []
-		# outcome_list = []
-		# tDimSplit_list = []
-
-		# for file in os.listdir(self._path):
-		# 	if file.startswith('loanID_np'):
-		# 		loanID_list.append(file)
-		# 	elif file.startswith('X_data_np_int'):
-		# 		X_int_list.append(file)
-		# 	elif file.startswith('X_data_np_float'):
-		# 		X_float_list.append(file)
-		# 	elif file.startswith('outcome_data_np'):
-		# 		outcome_list.append(file)
-		# 	elif file.startswith('tDimSplit_np'):
-		# 		tDimSplit_list.append(file)
-
-		# self._buckets = list(set(map(lambda s: s.split('_')[2], loanID_list)))
-
-		# self._bucket_loanID = {bucket:[] for bucket in self._buckets}
-		# self._bucket_X_int = {bucket:[] for bucket in self._buckets}
-		# self._bucket_X_float = {bucket:[] for bucket in self._buckets}
-		# self._bucket_outcome = {bucket:[] for bucket in self._buckets}
-		# self._bucket_tDimSplit = {bucket:[] for bucket in self._buckets}
-
-		# for file in loanID_list:
-		# 	self._bucket_loanID[file.split('_')[2]].append(file)
-		# for file in X_int_list:
-		# 	self._bucket_X_int[file.split('_')[4]].append(file)
-		# for file in X_float_list:
-		# 	self._bucket_X_float[file.split('_')[4]].append(file)
-		# for file in outcome_list:
-		# 	self._bucket_outcome[file.split('_')[3]].append(file)
-		# for file in tDimSplit_list:
-		# 	self._bucket_tDimSplit[file.split('_')[2]].append(file)
-
-		# for bucket in self._buckets:
-		# 	self._bucket_loanID[bucket] = sorted(self._bucket_loanID[bucket])
-		# 	self._bucket_X_int[bucket] = sorted(self._bucket_X_int[bucket])
-		# 	self._bucket_X_float[bucket] = sorted(self._bucket_X_float[bucket])
-		# 	self._bucket_outcome[bucket] = sorted(self._bucket_outcome[bucket])
-		# 	self._bucket_tDimSplit[bucket] = sorted(self._bucket_tDimSplit[bucket])
-
 		bucket_data, self._buckets = create_file_dict(self._path)
 		self._bucket_loanID = bucket_data['loanID']
 		self._bucket_X_int = bucket_data['X_int']

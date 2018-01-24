@@ -70,6 +70,18 @@ def create_file_dict(path):
 	bucket_data = {'loanID':bucket_loanID, 'X_int':bucket_X_int, 'X_float':bucket_X_float, 'outcome':bucket_outcome, 'tDimSplit':bucket_tDimSplit}
 	return (bucket_data, buckets)
 
+def longitudinal_separation(lValue, tValue, sep=[121,281,287,306]):
+	###retun the length in train/valid/test
+	len_train = min(max(sep[1]-tValue,0),lValue)
+	len_valid = min(max(sep[2]-tValue,0),max(tValue+lValue-sep[1],0),lValue,sep[2]-sep[1])
+	len_test = min(max(tValue+lValue-sep[2],0),lValue)
+	return np.array([len_train,len_valid,len_test], dtype='int16')
+
+def decide_bucket(lValue, buckets):
+	for bucket in buckets:
+		if lValue <= bucket:
+			return bucket
+
 def RNNdata_count(path):
 	count = dict()
 	for lValue in os.listdir(path):

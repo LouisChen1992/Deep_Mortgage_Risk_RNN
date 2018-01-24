@@ -63,7 +63,6 @@ class Model:
 		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim_ff']], name='input_placeholder')
 		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], None], name='output_placeholder')
 		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], 3])
-		self._bucket_placeholder = tf.placeholder(dtype=tf.int32, shape=(), name='bucket_placeholder')
 
 		xs_rnn = tf.split(value=self._x_rnn_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		xs_ff = tf.split(value=self._x_ff_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
@@ -120,17 +119,6 @@ class Model:
 					dp_output_keep_prob=1.0,
 					activation=self._config['activation'] if 'activation' in self._config else None)
 				rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
-
-				# self._test1 = rnn_outputs
-				# self._test2 = x_ff
-				# self._test3 = x_length
-
-				# ts = tf.to_int32(tf.minimum(tf.shape(rnn_outputs)[1], tf.shape(x_ff)[1]))
-				# rnn_outputs_slice = tf.slice(rnn_outputs, begin=[0,0,0], size=[-1,ts,-1])
-				# x_ff_slice = tf.slice(x_ff, begin=[0,0,0], size=[-1,ts,-1])
-
-				# outputs = tf.concat([rnn_outputs_slice, x_ff_slice], axis=2)
-				# outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
 
 				outputs = tf.pad(rnn_outputs, [[0,0],[0,tf.shape(x_ff)[1]-tf.shape(rnn_outputs)[1]],[0,0]])
 				outputs = tf.concat([outputs, x_ff], axis=2)

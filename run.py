@@ -94,8 +94,7 @@ with tf.Session(config=sess_config) as sess:
 					model._x_rnn_placeholder:X_RNN, 
 					model._x_ff_placeholder:X_FF,
 					model._y_placeholder:Y, 
-					model._tDimSplit_placeholder:tDimSplit,
-					model._bucket_placeholder:bucket}
+					model._tDimSplit_placeholder:tDimSplit}
 
 				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
 				total_loss += loss_i
@@ -120,8 +119,7 @@ with tf.Session(config=sess_config) as sess:
 					model._x_rnn_placeholder:X_RNN, 
 					model._x_ff_placeholder:X_FF,
 					model._y_placeholder:Y, 
-					model._tDimSplit_placeholder:tDimSplit,
-					model._bucket_placeholder:bucket}
+					model._tDimSplit_placeholder:tDimSplit}
 				if FLAGS.mode == 'train':
 					loss_i, num_i = sess.run(fetches=[model._sum_loss, model._num], feed_dict=feed_dict)
 					total_train_loss += loss_i

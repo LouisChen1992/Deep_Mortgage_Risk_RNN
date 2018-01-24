@@ -1,0 +1,6 @@
+*.pyc
+*.pem
+.DS_Store
+reference/
+model/
+__pycache__/

@@ -1,0 +1,22 @@
+{
+	"num_gpus" : 2,
+	"batch_size_per_gpu" : 1000,
+
+	"feature_dim_rnn" : 291,
+	"feature_dim_ff" : 0,
+	"num_category" : 7,
+	"selected_covariate_file_int" : false,
+	"selected_covariate_file_float" : false,
+
+	"cell_type" : "lstm",
+	"num_units_rnn" : [200, 140, 140, 140, 140],
+	"num_layers_rnn" : 5,
+	"num_units_ff" : [],
+	"num_layers_ff" : 0,
+
+	"optimizer" : "Momentum",
+	"learning_rate" : 0.1,
+	"decay_steps" : false,
+	"decay_rate" : false,
+	"dropout" : 1.0
+}

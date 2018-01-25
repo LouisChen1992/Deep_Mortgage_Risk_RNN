@@ -1,6 +1,7 @@
 import os
 import random
 import six
+import numpy as np
 
 def deco_print(line, end='\n'):
 	six.print_('>==================> ' + line, end=end)
@@ -81,6 +82,12 @@ def decide_bucket(lValue, buckets):
 	for bucket in buckets:
 		if lValue <= bucket:
 			return bucket
+
+def batch_size_ratio(buckets):
+	buckets_float = np.array([float(bucket) for bucket in buckets], dtype='float32')
+	bucket_max = max(buckets_float)
+	ratio = 2**(np.log(bucket_max / buckets_float) / np.log(2)).astype(int)
+	return {buckets[i]:ratio[i] for i in range(len(buckets))}
 
 def RNNdata_count(path):
 	count = dict()

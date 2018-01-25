@@ -2,7 +2,7 @@ import os
 import copy
 import json
 import numpy as np
-from .utils import weighted_choice, create_file_dict
+from .utils import batch_size_ratio, weighted_choice, create_file_dict
 
 class DataInRamInputLayer():
 	def __init__(self, path, shuffle=True, load_file_list=True, selected_int=False, selected_float=False):
@@ -40,6 +40,8 @@ class DataInRamInputLayer():
 
 	def _create_file_list(self):
 		bucket_data, self._buckets = create_file_dict(self._path)
+		self._batch_size_ratio = batch_size_ratio(self._buckets)
+
 		self._bucket_loanID = bucket_data['loanID']
 		self._bucket_X_int = bucket_data['X_int']
 		self._bucket_X_float = bucket_data['X_float']
@@ -63,6 +65,7 @@ class DataInRamInputLayer():
 
 		bucket = weighted_choice(bucket_count_left, self._buckets)
 		while bucket is not None:
+			batch_size_bucket = batch_size * self._batch_size_ratio[bucket]
 			current_count += 1
 			idx_file = self._bucket_outseq[bucket][bucket_idx[bucket]]
 			X_int = np.load(os.path.join(self._path, self._bucket_X_int[bucket][idx_file]))[:,:,:-2]  # remove last two integer feature
@@ -84,14 +87,14 @@ class DataInRamInputLayer():
 				X_float_FF = X_float[:,:,[]]
 
 			num_example = X_int_RNN.shape[0]
-			num_batch = num_example // batch_size
+			num_batch = num_example // batch_size_bucket
 			idx_example = np.arange(num_example)
 			if self._shuffle:
 				np.random.shuffle(idx_example)
 
 			for idx_batch in range(num_batch):
-				batch_start = idx_batch*batch_size
-				batch_end = (idx_batch+1)*batch_size
+				batch_start = idx_batch*batch_size_bucket
+				batch_end = (idx_batch+1)*batch_size_bucket
 
 				idx_input = idx_example[batch_start:batch_end]
 				X_int_RNN_input = X_int_RNN[idx_input]

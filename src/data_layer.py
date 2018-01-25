@@ -61,14 +61,7 @@ class DataInRamInputLayer():
 			### consider effective length for training
 			prob = {bucket:self._bucket_count[bucket] / self._batch_size_ratio[bucket] for bucket in self._buckets}
 			num_file_fetch_epoch = int(np.sum(list(prob.values())) / batch_size * 10000)
-
-			print(prob)
-			print(num_file_fetch_epoch)
-
 			prob = {bucket:prob[bucket] / np.sum(list(prob.values())) for bucket in self._buckets}
-
-			print(prob)
-			ddgd
 
 			for i in range(num_file_fetch_epoch):
 				bucket = weighted_choice(self._bucket_count, self._buckets, prob)

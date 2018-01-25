@@ -85,7 +85,7 @@ def decide_bucket(lValue, buckets):
 
 def batch_size_ratio(buckets):
 	buckets_float = np.array([float(bucket) for bucket in buckets], dtype='float32')
-	bucket_max = max(buckets_float)
+	bucket_max = sorted(buckets_float)[-2]
 	ratio = 2**(np.log(bucket_max / buckets_float) / np.log(2)).astype(int)
 	return {buckets[i]:ratio[i] for i in range(len(buckets))}
 

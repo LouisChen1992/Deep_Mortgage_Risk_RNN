@@ -59,13 +59,13 @@ class DataInRamInputLayer():
 
 		if use_effective_length:
 			### consider effective length for training
-			prob = np.array([self._bucket_count[bucket] / self._batch_size_ratio[bucket] for bucket in self._buckets], dtype='float32')
-			num_file_fetch_epoch = np.sum(prob) / batch_size * 10000
+			prob = {bucket:self._bucket_count[bucket] / self._batch_size_ratio[bucket] for bucket in self._buckets}
+			num_file_fetch_epoch = int(np.sum(prob.values()) / batch_size * 10000)
 
 			print(prob)
 			print(num_file_fetch_epoch)
 
-			prob = prob / np.sum(prob)
+			prob = {bucket:prob[bucket] / np.sum(prob.values()) for bucket in self._buckets}
 
 			print(prob)
 			ddgd

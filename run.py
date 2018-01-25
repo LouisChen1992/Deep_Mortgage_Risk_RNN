@@ -15,7 +15,8 @@ tf.flags.DEFINE_string('logdir', '', 'Path to save logs and checkpoints')
 tf.flags.DEFINE_string('mode', 'valid', 'Mode: train/valid/test')
 tf.flags.DEFINE_string('dataset', 'subprime', 'Dataset: subprime/prime/all')
 tf.flags.DEFINE_integer('num_epochs', 50, 'Number of training epochs')
-tf.flags.DEFINE_integer('summary_frequency', 100, 'iterations after which summary takes place')
+tf.flags.DEFINE_integer('summary_frequency', 100, 'Iterations after which summary takes place')
+tf.flags.DEFINE_boolean('effective_length', False, 'True/False')
 FLAGS = tf.flags.FLAGS
 
 ### Load Config File
@@ -89,7 +90,7 @@ with tf.Session(config=sess_config) as sess:
 
 			### SGD step
 			total_loss = 0.0
-			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
+			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'], use_effective_length=FLAGS.effective_length)):
 				feed_dict = {
 					model._x_rnn_placeholder:X_RNN, 
 					model._x_ff_placeholder:X_FF,

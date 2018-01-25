@@ -10,17 +10,28 @@ def deco_print_dict(dic):
 	for key, value in dic.items():
 		deco_print('{} : {}'.format(key, value))
 
-def weighted_choice(bucket_count, buckets):
-	total_count = sum(bucket_count.values())
-	if total_count == 0:
-		return None
+def weighted_choice(bucket_count, buckets, prob=None):
+	### if ratio is None, choose bucket with probability proportional to bucket_count
+	### otherwise, choose bucket with probability proportional to bucket_count / ratio
+	if prob is None:
+		total_count = sum(bucket_count.values())
+		if total_count == 0:
+			return None
+		else:
+			r = random.randint(1, total_count)
+			idx = 0
+			s = bucket_count[buckets[0]]
+			while s < r:
+				idx += 1
+				s += bucket_count[buckets[idx]]
+			return buckets[idx]
 	else:
-		r = random.randint(1, total_count)
+		r = random.random()
 		idx = 0
-		s = bucket_count[buckets[0]]
+		s = prob[buckets[0]]
 		while s < r:
 			idx += 1
-			s += bucket_count[buckets[idx]]
+			s += prob[buckets[idx]]
 		return buckets[idx]
 
 def create_file_dict(path):

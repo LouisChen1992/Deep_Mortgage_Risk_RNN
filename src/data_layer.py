@@ -60,7 +60,7 @@ class DataInRamInputLayer():
 		if use_effective_length:
 			### consider effective length for training
 			prob = {bucket:self._bucket_count[bucket] / self._batch_size_ratio[bucket] for bucket in self._buckets}
-			num_file_fetch_epoch = int(np.sum(list(prob.values())) / batch_size * 10000)
+			num_file_fetch_epoch = int(np.sum(list(prob.values())) / batch_size * 4000) # might change 4000
 			prob = {bucket:prob[bucket] / np.sum(list(prob.values())) for bucket in self._buckets}
 
 			for i in range(num_file_fetch_epoch):

@@ -137,6 +137,12 @@ class DataInRamInputLayer():
 				moments[1] += np.sum(X_selected**2, axis=0)
 				self._max = np.maximum(np.max(X_selected, 0), self._max)
 				self._min = np.maximum(np.min(X_selected, 0), self._min)
+				break
 			deco_print('Processing bucket %s, %d / %d, finished!\n' %(bucket, self._bucket_count[bucket], self._bucket_count[bucket]))
+			break
 		self._mean = moments[0] / count
 		self._std = np.sqrt(moments[1] / count - self._mean**2)
+		print(self._min)
+		print(self._max)
+		print(self._mean)
+		print(self._std)

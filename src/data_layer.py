@@ -2,7 +2,7 @@ import os
 import copy
 import json
 import numpy as np
-from .utils import weighted_choice, create_file_dict
+from .utils import weighted_choice, create_file_dict, deco_print
 
 class DataInRamInputLayer():
 	def __init__(self, path, shuffle=True, load_file_list=True, selected_int=False, selected_float=False):
@@ -115,7 +115,9 @@ class DataInRamInputLayer():
 		self._max = np.array([-float('inf')] * self._covariate_count)
 		self._min = np.array([float('inf')] * self._covariate_count)
 		for bucket in self._buckets:
+			deco_print('Processing bucket %s' %bucket)
 			for idx in range(self._bucket_count[bucket]):
+				deco_print('Processing bucket %s, %d / %d' %(bucket, idx+1, self._bucket_count[bucket]), end='\r')
 				tDimSplit = np.load(os.path.join(self._path, self._bucket_tDimSplit[bucket][idx]))
 				X_int = np.load(os.path.join(self._path, self._bucket_X_int[bucket][idx]))
 				X_float = np.load(os.path.join(self._path, self._bucket_X_float[bucket][idx]))
@@ -135,5 +137,6 @@ class DataInRamInputLayer():
 				moments[1] += np.sum(X_selected**2, axis=0)
 				self._max = np.maximum(np.max(X_selected, 0), self._max)
 				self._min = np.maximum(np.min(X_selected, 0), self._min)
+			deco_print('Processing bucket %s, %d / %d, finished!\n' %(bucket, self._bucket_count[bucket], self._bucket_count[bucket]))
 		self._mean = moments[0] / count
 		self._std = np.sqrt(moments[1] / count - self._mean**2)

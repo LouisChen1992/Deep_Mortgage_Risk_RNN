@@ -110,10 +110,10 @@ class DataInRamInputLayer():
 
 	def calculate_feature_statistics(self):
 		### for test data
-		moments = np.zeros((2, self._covariate_count))
+		moments = np.zeros((2, self._covariate_count+2))
 		count = 0
-		self._max = np.array([-float('inf')] * self._covariate_count)
-		self._min = np.array([float('inf')] * self._covariate_count)
+		self._max = np.array([-float('inf')] * self._covariate_count+2)
+		self._min = np.array([float('inf')] * self._covariate_count+2)
 		for bucket in self._buckets:
 			deco_print('Processing bucket %s' %bucket)
 			for idx in range(self._bucket_count[bucket]):

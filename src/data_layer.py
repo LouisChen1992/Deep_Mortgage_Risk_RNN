@@ -133,6 +133,8 @@ class DataInRamInputLayer():
 					mask[i, (tDimSplit_i[0]+tDimSplit_i[1]):sum(tDimSplit_i)] = 1
 				X = np.concatenate([X_int, X_float], axis=2)
 				X_selected = X[mask]
+				print(X_selected.shape)
+				print(X_selected)
 				moments[0] += np.sum(X_selected, axis=0)
 				moments[1] += np.sum(X_selected**2, axis=0)
 				self._max = np.maximum(np.max(X_selected, 0), self._max)

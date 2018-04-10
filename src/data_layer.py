@@ -107,3 +107,33 @@ class DataInRamInputLayer():
 			bucket_count_left[bucket] -= 1
 			bucket_idx[bucket] += 1
 			bucket = weighted_choice(bucket_count_left, self._buckets)
+
+	def calculate_feature_statistics(self):
+		### for test data
+		moments = np.zeros((2, self._covariate_count))
+		count = 0
+		self._max = np.array([-float('inf')] * self._covariate_count)
+		self._min = np.array([float('inf')] * self._covariate_count)
+		for bucket in self._buckets:
+			for idx in range(self._bucket_count[bucket]):
+				tDimSplit = np.load(os.path.join(self._path, self._bucket_tDimSplit[bucket][idx]))
+				X_int = np.load(os.path.join(self._path, self._bucket_X_int[bucket][idx]))
+				X_float = np.load(os.path.join(self._path, self._bucket_X_float[bucket][idx]))
+				N = tDimSplit.shape[0]
+				L = int(bucket)
+				assert(X_int.shape[0] == X_float.shape[0] == N)
+				assert(X_int.shape[1] == X_float.shape[1] == L)
+				count += np.sum(tDimSplit[:,-1])
+
+				mask = np.zeros((N, L), dtype=bool)
+				for i in range(N):
+					tDimSplit_i = tDimSplit[i]
+					mask[i, (tDimSplit_i[0]+tDimSplit_i[1]):sum(tDimSplit_i)] = 1
+				X = np.concatenate([X_int, X_float], axis=2)
+				X_selected = X[mask]
+				moments[0] += np.sum(X_selected, axis=0)
+				moments[1] += np.sum(X_selected**2, axis=0)
+				self._max = np.maximum(np.max(X_selected, 0), self._max)
+				self._min = np.maximum(np.min(X_selected, 0), self._min)
+		self._mean = moments[0] / count
+		self._std = np.sqrt(moments[1] / count - self._mean**2)

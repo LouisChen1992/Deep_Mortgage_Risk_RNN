@@ -59,10 +59,10 @@ class Model:
 		self._use_valid_set = use_valid_set
 		self._global_step = global_step if global_step is not None else tf.contrib.framework.get_or_create_global_step()
 
-		self._x_rnn_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim_rnn']], name='input_placeholder')
-		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[self._config['global_batch_size'], None, self._config['feature_dim_ff']], name='input_placeholder')
-		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], None], name='output_placeholder')
-		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[self._config['global_batch_size'], 3])
+		self._x_rnn_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_rnn']], name='input_placeholder')
+		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_ff']], name='input_placeholder')
+		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[None, None], name='output_placeholder')
+		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[None, 3])
 
 		xs_rnn = tf.split(value=self._x_rnn_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		xs_ff = tf.split(value=self._x_ff_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)

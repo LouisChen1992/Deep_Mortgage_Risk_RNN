@@ -191,7 +191,7 @@ class Model:
 				average_across_timesteps=False,
 				average_across_batch=False,
 				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-			return loss_sum, num
+			return loss_sum
 	
 	def _add_train_op(self):
 		deco_print('Trainable Variables')

@@ -179,7 +179,7 @@ with tf.Session(config=sess_config) as sess:
 			if i % FLAGS.summary_frequency == 0:
 				time_last = time.time() - time_start
 				time_est = time_last / p
-				deco_print('Elapse / Estimate: %.2fs / %.2fs     ' %(time_last, time_est), end='\r')
+				deco_print('Test Loss: %0.4f Elapse / Estimate: %.2fs / %.2fs     ' %(total_test_loss / count_test, time_last, time_est), end='\r')
 
 		test_loss = total_test_loss / count_test
-		deco_print('Test Loss: {}                                        '.format(test_loss))
+		deco_print('Test Loss: {}                                          '.format(test_loss))

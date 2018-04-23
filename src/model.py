@@ -57,7 +57,7 @@ class Model:
 		self._force_var_reuse = force_var_reuse
 		self._is_training = is_training
 		self._use_valid_set = use_valid_set
-		self._global_step = global_step if global_step is not None else tf.contrib.framework.get_or_create_global_step()
+		self._global_step = global_step if global_step is not None else tf.train.get_or_create_global_step()
 
 		self._x_rnn_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_rnn']], name='input_placeholder')
 		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_ff']], name='input_placeholder')

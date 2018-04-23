@@ -14,7 +14,7 @@ tf.flags.DEFINE_string('config', '', 'Path to config file')
 tf.flags.DEFINE_string('logdir', '', 'Path to save logs and checkpoints')
 tf.flags.DEFINE_string('mode', 'valid', 'Mode: train/valid/test')
 tf.flags.DEFINE_string('dataset', 'all', 'Dataset: subprime/prime/all')
-tf.flags.DEFINE_integer('num_epochs', 50, 'Number of training epochs')
+tf.flags.DEFINE_integer('num_epochs', 20, 'Number of training epochs')
 tf.flags.DEFINE_integer('summary_frequency', 100, 'Iterations after which summary takes place')
 tf.flags.DEFINE_boolean('effective_length', False, 'True/False')
 FLAGS = tf.flags.FLAGS

@@ -1,0 +1,18 @@
+{
+	"num_gpus" : 1,
+	"batch_size_per_gpu" : 128,
+
+	"feature_dim_rnn" : 291,
+	"feature_dim_ff" : 0,
+	"num_category" : 7,
+	"selected_covariate_file_int" : false,
+	"selected_covariate_file_float" : false,
+
+	"cell_type" : "lstm",
+	"num_units_rnn" : [],
+	"num_layers_rnn" : 0,
+	"num_units_ff" : [200, 140, 140, 140, 140],
+	"num_layers_ff" : 5,
+
+	"dropout" : 1.0
+}

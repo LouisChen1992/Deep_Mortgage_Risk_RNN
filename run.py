@@ -14,7 +14,7 @@ tf.flags.DEFINE_string('config', '', 'Path to config file')
 tf.flags.DEFINE_string('logdir', '', 'Path to save logs and checkpoints')
 tf.flags.DEFINE_string('mode', 'valid', 'Mode: train/valid/test')
 tf.flags.DEFINE_string('dataset', 'all', 'Dataset: subprime/prime/all')
-tf.flags.DEFINE_integer('num_epochs', 50, 'Number of training epochs')
+tf.flags.DEFINE_integer('num_epochs', 20, 'Number of training epochs')
 tf.flags.DEFINE_integer('summary_frequency', 100, 'Iterations after which summary takes place')
 tf.flags.DEFINE_boolean('effective_length', False, 'True/False')
 FLAGS = tf.flags.FLAGS
@@ -179,7 +179,7 @@ with tf.Session(config=sess_config) as sess:
 			if i % FLAGS.summary_frequency == 0:
 				time_last = time.time() - time_start
 				time_est = time_last / p
-				deco_print('Elapse / Estimate: %.2fs / %.2fs     ' %(time_last, time_est), end='\r')
+				deco_print('Test Loss: %0.4f Elapse / Estimate: %.2fs / %.2fs     ' %(total_test_loss / count_test, time_last, time_est), end='\r')
 
 		test_loss = total_test_loss / count_test
-		deco_print('Test Loss: {}                                        '.format(test_loss))
+		deco_print('Test Loss: {}                                          '.format(test_loss))

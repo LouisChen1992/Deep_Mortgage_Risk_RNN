@@ -57,7 +57,7 @@ class Model:
 		self._force_var_reuse = force_var_reuse
 		self._is_training = is_training
 		self._use_valid_set = use_valid_set
-		self._global_step = global_step if global_step is not None else tf.contrib.framework.get_or_create_global_step()
+		self._global_step = global_step if global_step is not None else tf.train.get_or_create_global_step()
 
 		self._x_rnn_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_rnn']], name='input_placeholder')
 		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_ff']], name='input_placeholder')
@@ -191,7 +191,7 @@ class Model:
 				average_across_timesteps=False,
 				average_across_batch=False,
 				softmax_loss_function=tf.nn.sparse_softmax_cross_entropy_with_logits))
-			return loss_sum, num
+			return loss_sum
 	
 	def _add_train_op(self):
 		deco_print('Trainable Variables')

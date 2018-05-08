@@ -1,0 +1,23 @@
+{
+	"num_gpus" : 2,
+	"batch_size_per_gpu" : 256,
+
+	"feature_dim_rnn" : 291,
+	"feature_dim_ff" : 0,
+	"num_category" : 7,
+	"selected_covariate_file_int" : "covariate/selected_covariate_int.json",
+	"selected_covariate_file_float" : "covariate/selected_covariate_float.json",
+
+	"cell_type" : "lstm",
+	"num_units_rnn" : [16],
+	"num_layers_rnn" : 1,
+	"num_units_ff" : [200, 140, 140, 140, 140],
+	"num_layers_ff" : 5,
+
+	"optimizer" : "Adam",
+	"learning_rate" : 0.001,
+	"decay_steps" : false,
+	"decay_rate" : false,
+	"dropout" : 0.9,
+	"max_grad_norm" : 10.0
+}

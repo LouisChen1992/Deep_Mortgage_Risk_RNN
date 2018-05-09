@@ -19,3 +19,9 @@ The table below reports test loss for the best fully-connected model (on validat
 | Epoch | Train Loss | Validation Loss | Test Loss |
 |:-----:|:----------:|:---------------:|:---------:|
 | 8     | 0.1754     | 0.2152          | 0.1903    |
+
+The table below reports test loss for an RNN model, with a single hidden layer and hidden unit size equal to 16 (on validation set):
+
+| Epoch | Train Loss | Validation Loss | Test Loss |
+|:-----:|:----------:|:---------------:|:---------:|
+| 10    | 0.1712     | 0.2033          | 0.3900    |

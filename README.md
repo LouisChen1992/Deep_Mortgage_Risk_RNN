@@ -24,4 +24,5 @@ The table below reports test loss for an RNN model, with a single hidden layer a
 
 | Epoch | Train Loss | Validation Loss | Test Loss |
 |:-----:|:----------:|:---------------:|:---------:|
+| 5     | 0.1740     | 0.2046          | 0.5965    |
 | 10    | 0.1712     | 0.2033          | 0.3900    |

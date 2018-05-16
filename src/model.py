@@ -1,55 +1,8 @@
 import tensorflow as tf
 from tensorflow.python.layers.core import Dense
-from tensorflow.python.ops.rnn_cell import BasicRNNCell, LSTMCell, GRUCell, DropoutWrapper, MultiRNNCell
+from tensorflow.python.ops.rnn_cell_impl import LSTMStateTuple
 from .utils import deco_print
-
-def create_rnn_cell(cell_type,
-					num_units,
-					num_layers=1,
-					dp_input_keep_prob=1.0,
-					dp_output_keep_prob=1.0,
-					activation=None):
-
-	def single_cell(num_units):
-		if cell_type == 'rnn':
-			cell_class = BasicRNNCell
-		elif cell_type == 'lstm':
-			cell_class = LSTMCell
-		elif cell_type == 'gru':
-			cell_class = GRUCell
-		else:
-			raise ValueError('Cell Type Not Supported! ')
-
-		if activation is not None:
-			if activation == 'relu':
-				activation_f = tf.nn.relu
-			elif activation == 'sigmoid':
-				activation_f = tf.sigmoid
-			elif activation == 'elu':
-				activation_f = tf.nn.elu
-			else:
-				raise ValueError('Activation Function Not Supported! ')
-		else:
-			activation_f = None
-
-		if dp_input_keep_prob != 1.0 or dp_output_keep_prob != 1.0:
-			return DropoutWrapper(cell_class(num_units=num_units, activation=activation_f),
-								input_keep_prob=dp_input_keep_prob,
-								output_keep_prob=dp_output_keep_prob)
-		else:
-			return cell_class(num_units=num_units)
-
-	if isinstance(num_units, list):
-		num_layers = len(num_units)
-		if num_layers > 1:
-			return MultiRNNCell([single_cell(num_units[i]) for i in range(num_layers)])
-		else:
-			return single_cell(num_units[0])
-	else:
-		if num_layers > 1:
-			return MultiRNNCell([single_cell(num_units) for _ in range(num_layers)])
-		else:
-			return single_cell(num_units)
+from .utils_model import create_rnn_cell, initial_state_size
 
 class Model:
 	def __init__(self, config, global_step=None, force_var_reuse=False, is_training=True, use_valid_set=False):
@@ -59,15 +12,39 @@ class Model:
 		self._use_valid_set = use_valid_set
 		self._global_step = global_step if global_step is not None else tf.train.get_or_create_global_step()
 
-		self._x_rnn_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_rnn']], name='input_placeholder')
-		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_ff']], name='input_placeholder')
+		self._x_rnn_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_rnn']], name='input_placeholder_rnn')
+		self._x_ff_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, None, self._config['feature_dim_ff']], name='input_placeholder_ff')
 		self._y_placeholder = tf.placeholder(dtype=tf.int32, shape=[None, None], name='output_placeholder')
 		self._tDimSplit_placeholder = tf.placeholder(dtype=tf.int32, shape=[None, 3])
+
+		# use trancated backpropagation through time
+		if 'TBPTT' in self._config and self._config['TBPTT']:
+			self._initial_state_size = initial_state_size(self._config['cell_type'], self._config['num_units_rnn'], num_layers=self._config['num_layers_rnn'])
+			self._initial_state_placeholder = tf.placeholder(dtype=tf.float32, shape=[None, self._initial_state_size], name='initial_state_placeholder')
 
 		xs_rnn = tf.split(value=self._x_rnn_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		xs_ff = tf.split(value=self._x_ff_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		ys = tf.split(value=self._y_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
 		tDimSplits = tf.split(value=self._tDimSplit_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
+
+		if 'TBPTT' in self._config and self._config['TBPTT']:
+			initial_states = tf.split(value=self._initial_state_placeholder, num_or_size_splits=self._config['num_gpus'], axis=0)
+			if isinstance(self._config['num_units_rnn'], list):
+				if self._config['cell_type'] == 'rnn' or self._config['cell_type'] == 'gru':
+					initial_states = [tuple(tf.split(value=states_tensor, num_or_size_splits=self._config['num_units_rnn'], axis=1)) for states_tensor in initial_states]
+				elif self._config['cell_type'] == 'lstm':
+					splits = [2 * unit for unit in self._config['num_units_rnn']]
+					initial_states = [tuple([LSTMStateTuple(*tf.split(value=layer_state, num_or_size_splits=2, axis=1))
+						for layer_state in tf.split(value=states_tensor, num_or_size_splits=splits, axis=1)])for states_tensor in initial_states]
+			else:
+				if self._config['cell_type'] == 'rnn' or self._config['cell_type'] == 'gru':
+					initial_states = [tuple(tf.split(value=states_tensor, num_or_size_splits=self._config['num_layers_rnn'], axis=1)) for states_tensor in initial_states]
+				elif self._config['cell_type'] == 'lstm':
+					initial_states = [tuple([LSTMStateTuple(*tf.split(value=layer_state, num_or_size_splits=2, axis=1))
+						for layer_state in tf.split(value=states_tensor, num_or_size_splits=self._config['num_layers_rnn'], axis=1)]) for states_tensor in initial_states]
+			last_states = []
+		else:
+			initial_states = [None] * self._config['num_gpus']
 
 		self._sum_loss = 0.0 # sum of loss in example
 		self._num = 0 # count
@@ -86,7 +63,7 @@ class Model:
 
 				if self._is_training:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx][:,:2], axis=1)
-					logits_i = self._build_forward_pass_graph(x_rnn=xs_rnn[gpu_idx], x_ff=xs_ff[gpu_idx], x_length=x_length)
+					logits_i, state_concat_i = self._build_forward_pass_graph(x_rnn=xs_rnn[gpu_idx], x_ff=xs_ff[gpu_idx], x_length=x_length, initial_state=initial_states[gpu_idx])
 					loss_i_sum_train, loss_i_sum_valid = self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx][:,:2])
 					self._sum_loss += loss_i_sum_train
 					if not self._use_valid_set:
@@ -97,10 +74,15 @@ class Model:
 						self._num_valid += tf.reduce_sum(tDimSplits[gpu_idx][:,1])
 				else:
 					x_length = tf.reduce_sum(tDimSplits[gpu_idx], axis=1)
-					logits_i = self._build_forward_pass_graph(x_rnn=xs_rnn[gpu_idx], x_ff=xs_ff[gpu_idx], x_length=x_length)
+					logits_i, state_concat_i = self._build_forward_pass_graph(x_rnn=xs_rnn[gpu_idx], x_ff=xs_ff[gpu_idx], x_length=x_length, initial_state=initial_states[gpu_idx])
 					self._sum_loss += self._add_loss(logits=logits_i, labels=ys[gpu_idx], lengths=tDimSplits[gpu_idx])
 					self._num += tf.reduce_sum(tDimSplits[gpu_idx][:,2])
 
+				if 'TBPTT' in self._config and self._config['TBPTT']:
+					last_states.append(state_concat_i)
+
+		if 'TBPTT' in self._config and self._config['TBPTT']:
+			self._last_state = tf.concat(last_states, axis=0)
 		self._loss = self._sum_loss / tf.to_float(self._num) # training or test loss
 
 		if self._is_training:
@@ -108,7 +90,7 @@ class Model:
 			if self._use_valid_set:
 				self._loss_valid = self._sum_loss_valid / tf.to_float(self._num_valid)
 
-	def _build_forward_pass_graph(self, x_rnn, x_ff, x_length):
+	def _build_forward_pass_graph(self, x_rnn, x_ff, x_length, initial_state=None):
 		if self._config['num_layers_rnn'] != 0:
 			with tf.variable_scope('{}_layer'.format(self._config['cell_type'])):
 				rnn_cell = create_rnn_cell(
@@ -118,13 +100,16 @@ class Model:
 					dp_input_keep_prob=self._config['dropout'],
 					dp_output_keep_prob=1.0,
 					activation=self._config['activation'] if 'activation' in self._config else None)
-				rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, dtype=tf.float32)
+				rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, initial_state=initial_state, dtype=tf.float32)
+
+				state_concat = tf.concat([tf.concat([state_tuple.c, state_tuple.h], axis=1) for state_tuple in state], axis=1)
 
 				outputs = tf.pad(rnn_outputs, [[0,0],[0,tf.shape(x_ff)[1]-tf.shape(rnn_outputs)[1]],[0,0]])
 				outputs = tf.concat([outputs, x_ff], axis=2)
 				outputs.set_shape([x_ff.get_shape()[0], None, rnn_outputs.get_shape()[2]+x_ff.get_shape()[2]])
 		else:
 			outputs = tf.concat([x_rnn, x_ff], axis=2)
+			state_concat = None
 
 		for l in range(self._config['num_layers_ff']):
 			with tf.variable_scope('FF_layer_%d' %l):
@@ -135,7 +120,7 @@ class Model:
 			layer = Dense(units=self._config['num_category'])
 			logits = layer(outputs)			
 
-		return logits
+		return logits, state_concat
 
 	def _add_loss(self, logits, labels, lengths):
 		if self._is_training:

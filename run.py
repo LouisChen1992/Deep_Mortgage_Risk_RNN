@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.core.framework import summary_pb2
 
 from src.model import Model
+from src.utils_model import initial_state_size
 from src.data_layer import DataInRamInputLayer
 from src.utils import deco_print, deco_print_dict
 
@@ -85,20 +86,57 @@ with tf.Session(config=sess_config) as sess:
 		summary_op = tf.summary.merge_all()
 		sw = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
 
+		if 'TBPTT' in config and config['TBPTT']:
+			ZERO_INIT_STATE = np.zeros(shape=(config['global_batch_size'], initial_state_size(config['cell_type'], config['num_units_rnn'], num_layers=config['num_layers_rnn'])), dtype='float32')
+
 		for epoch in range(FLAGS.num_epochs):
 			epoch_start = time.time()
 
 			### SGD step
 			total_loss = 0.0
 			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'], use_effective_length=FLAGS.effective_length)):
-				feed_dict = {
-					model._x_rnn_placeholder:X_RNN, 
-					model._x_ff_placeholder:X_FF,
-					model._y_placeholder:Y, 
-					model._tDimSplit_placeholder:tDimSplit}
+				if 'TBPTT' in config and config['TBPTT']:
+					sequence_length = X_FF.shape[1]
+					j = 0
+					sum_loss_i = 0.0
+					num_i = 0
+					while j*config['TBPTT_num_steps'] < sequence_length:
+						X_RNN_j = X_RNN[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps']),:]
+						X_FF_j = X_FF[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps']),:]
+						Y_j = Y[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps'])]
+						if j == 0:
+							INIT_STATE_j = ZERO_INIT_STATE
+						else:
+							INIT_STATE_j = last_state_j
+						tDimSplit_j = np.zeros(shape=(config['global_batch_size'],3), dtype='int32')
+						tDimSplit_j[:,0] += np.minimum(tDimSplit[:,0], config['TBPTT_num_steps'])
+						tDimSplit_j[:,1] += np.minimum(tDimSplit[:,1], config['TBPTT_num_steps'] - tDimSplit_j[:,0])
+						tDimSplit_j[:,2] += np.minimum(tDimSplit[:,2], config['TBPTT_num_steps'] - tDimSplit_j[:,0] - tDimSplit_j[:,1])
+						tDimSplit -= tDimSplit_j
 
-				loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
-				total_loss += loss_i
+						feed_dict = {
+							model._x_rnn_placeholder:X_RNN_j,
+							model._x_ff_placeholder:X_FF_j,
+							model._y_placeholder:Y_j,
+							model._tDimSplit_placeholder:tDimSplit_j,
+							model._initial_state_placeholder:INIT_STATE_j}
+
+						sum_loss_ij, num_ij, _, last_state_j = sess.run(fetches=[model._sum_loss, model._num, model._train_op, model._last_state], feed_dict=feed_dict)
+						sum_loss_i += sum_loss_ij
+						num_i += num_ij
+						j += 1
+
+					total_loss += sum_loss_i / num_i
+				else:
+					feed_dict = {
+						model._x_rnn_placeholder:X_RNN, 
+						model._x_ff_placeholder:X_FF,
+						model._y_placeholder:Y, 
+						model._tDimSplit_placeholder:tDimSplit}
+
+					loss_i, _ = sess.run(fetches=[model._loss, model._train_op], feed_dict=feed_dict)
+					total_loss += loss_i
+
 				if i % FLAGS.summary_frequency == 0:
 					sm, = sess.run(fetches=[summary_op], feed_dict=feed_dict)
 					sw.add_summary(sm, global_step=sess.run(model._global_step))

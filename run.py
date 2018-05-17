@@ -97,12 +97,13 @@ with tf.Session(config=sess_config) as sess:
 					j = 0
 					sum_loss_i = 0.0
 					num_i = 0
+					INIT_STATE_i = np.zeros(shape=(tDimSplit.shape[0], initial_state_size(config['cell_type'], config['num_units_rnn'], num_layers=config['num_layers_rnn'])), dtype='float32')
 					while j*config['TBPTT_num_steps'] < sequence_length:
 						X_RNN_j = X_RNN[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps']),:]
 						X_FF_j = X_FF[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps']),:]
 						Y_j = Y[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps'])]
 						if j == 0:
-							INIT_STATE_j = np.zeros(shape=(tDimSplit.shape[0], initial_state_size(config['cell_type'], config['num_units_rnn'], num_layers=config['num_layers_rnn'])), dtype='float32')
+							INIT_STATE_j = INIT_STATE_i
 						else:
 							INIT_STATE_j = last_state_j
 						tDimSplit_j = np.zeros(shape=(tDimSplit.shape[0],3), dtype='int32')
@@ -122,6 +123,11 @@ with tf.Session(config=sess_config) as sess:
 							sum_loss_i += sum_loss_ij
 							num_i += num_ij
 							j += 1
+						else:
+							last_state_j = INIT_STATE_i
+							### debug remove later
+							deco_print('Skip (%d, %d)' %(i,j), end='\r')
+							###
 
 					total_loss += sum_loss_i / num_i
 				else:

@@ -102,10 +102,10 @@ class Model:
 					activation=self._config['activation'] if 'activation' in self._config else None)
 				if self._config['num_layers_rnn'] == 1:
 					rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, initial_state=initial_state[0], dtype=tf.float32)
+					state_concat = tf.concat([state.c, state.h], axis=1)
 				else:
 					rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, initial_state=initial_state, dtype=tf.float32)
-
-				state_concat = tf.concat([tf.concat([state_tuple.c, state_tuple.h], axis=1) for state_tuple in state], axis=1)
+					state_concat = tf.concat([tf.concat([state_tuple.c, state_tuple.h], axis=1) for state_tuple in state], axis=1)
 
 				outputs = tf.pad(rnn_outputs, [[0,0],[0,tf.shape(x_ff)[1]-tf.shape(rnn_outputs)[1]],[0,0]])
 				outputs = tf.concat([outputs, x_ff], axis=2)

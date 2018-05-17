@@ -86,9 +86,6 @@ with tf.Session(config=sess_config) as sess:
 		summary_op = tf.summary.merge_all()
 		sw = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
 
-		if 'TBPTT' in config and config['TBPTT']:
-			ZERO_INIT_STATE = np.zeros(shape=(config['global_batch_size'], initial_state_size(config['cell_type'], config['num_units_rnn'], num_layers=config['num_layers_rnn'])), dtype='float32')
-
 		for epoch in range(FLAGS.num_epochs):
 			epoch_start = time.time()
 
@@ -105,7 +102,7 @@ with tf.Session(config=sess_config) as sess:
 						X_FF_j = X_FF[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps']),:]
 						Y_j = Y[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps'])]
 						if j == 0:
-							INIT_STATE_j = ZERO_INIT_STATE
+							INIT_STATE_j = np.zeros(shape=(tDimSplit.shape[0], initial_state_size(config['cell_type'], config['num_units_rnn'], num_layers=config['num_layers_rnn'])), dtype='float32')
 						else:
 							INIT_STATE_j = last_state_j
 						tDimSplit_j = np.zeros(shape=(tDimSplit.shape[0],3), dtype='int32')

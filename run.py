@@ -108,7 +108,7 @@ with tf.Session(config=sess_config) as sess:
 							INIT_STATE_j = ZERO_INIT_STATE
 						else:
 							INIT_STATE_j = last_state_j
-						tDimSplit_j = np.zeros(shape=(config['global_batch_size'],3), dtype='int32')
+						tDimSplit_j = np.zeros(shape=(tDimSplit.shape[0],3), dtype='int32')
 						tDimSplit_j[:,0] += np.minimum(tDimSplit[:,0], config['TBPTT_num_steps'])
 						tDimSplit_j[:,1] += np.minimum(tDimSplit[:,1], config['TBPTT_num_steps'] - tDimSplit_j[:,0])
 						tDimSplit_j[:,2] += np.minimum(tDimSplit[:,2], config['TBPTT_num_steps'] - tDimSplit_j[:,0] - tDimSplit_j[:,1])

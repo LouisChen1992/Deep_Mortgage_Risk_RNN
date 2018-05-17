@@ -100,7 +100,10 @@ class Model:
 					dp_input_keep_prob=self._config['dropout'],
 					dp_output_keep_prob=1.0,
 					activation=self._config['activation'] if 'activation' in self._config else None)
-				rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, initial_state=initial_state, dtype=tf.float32)
+				if self._config['num_layers_rnn'] == 1:
+					rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, initial_state=initial_state[0], dtype=tf.float32)
+				else:
+					rnn_outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, inputs=x_rnn, sequence_length=x_length, initial_state=initial_state, dtype=tf.float32)
 
 				state_concat = tf.concat([tf.concat([state_tuple.c, state_tuple.h], axis=1) for state_tuple in state], axis=1)
 

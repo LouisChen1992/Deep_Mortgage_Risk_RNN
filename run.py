@@ -146,9 +146,9 @@ with tf.Session(config=sess_config) as sess:
 					total_loss += loss_i
 
 				if i % FLAGS.summary_frequency == 0:
-					sm, = sess.run(fetches=[summary_op], feed_dict=feed_dict)
-					sw.add_summary(sm, global_step=sess.run(model._global_step))
-					sw.flush()
+					# sm, = sess.run(fetches=[summary_op], feed_dict=feed_dict)
+					# sw.add_summary(sm, global_step=sess.run(model._global_step))
+					# sw.flush()
 					time_last = time.time() - epoch_start
 					time_est = time_last / p
 					deco_print('Training Loss Update: %f, Elapse / Estimate: %.2fs / %.2fs     ' %(total_loss/(i+1), time_last, time_est), end='\r')

@@ -121,6 +121,7 @@ class DataInRamInputLayer():
 				X_float = np.load(os.path.join(self._path, self._bucket_X_float[bucket][idx_file]))
 				outcome = np.load(os.path.join(self._path, self._bucket_outcome[bucket][idx_file]))
 				tDimSplit = np.load(os.path.join(self._path, self._bucket_tDimSplit[bucket][idx_file]))
+				deco_print('load another file...') ### for debug
 
 				if self._selected_int and self._selected_float:
 					selected_int_FF = [i for i in range(self._covariate_count_int) if i not in self._selected_int]

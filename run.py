@@ -110,18 +110,18 @@ with tf.Session(config=sess_config) as sess:
 						tDimSplit_j[:,1] += np.minimum(tDimSplit[:,1], config['TBPTT_num_steps'] - tDimSplit_j[:,0])
 						tDimSplit_j[:,2] += np.minimum(tDimSplit[:,2], config['TBPTT_num_steps'] - tDimSplit_j[:,0] - tDimSplit_j[:,1])
 						tDimSplit -= tDimSplit_j
+						if sum(tDimSplit_j[:,0]) > 0: ### prevent nan ?
+							feed_dict = {
+								model._x_rnn_placeholder:X_RNN_j,
+								model._x_ff_placeholder:X_FF_j,
+								model._y_placeholder:Y_j,
+								model._tDimSplit_placeholder:tDimSplit_j,
+								model._initial_state_placeholder:INIT_STATE_j}
 
-						feed_dict = {
-							model._x_rnn_placeholder:X_RNN_j,
-							model._x_ff_placeholder:X_FF_j,
-							model._y_placeholder:Y_j,
-							model._tDimSplit_placeholder:tDimSplit_j,
-							model._initial_state_placeholder:INIT_STATE_j}
-
-						sum_loss_ij, num_ij, _, last_state_j = sess.run(fetches=[model._sum_loss, model._num, model._train_op, model._last_state], feed_dict=feed_dict)
-						sum_loss_i += sum_loss_ij
-						num_i += num_ij
-						j += 1
+							sum_loss_ij, num_ij, _, last_state_j = sess.run(fetches=[model._sum_loss, model._num, model._train_op, model._last_state], feed_dict=feed_dict)
+							sum_loss_i += sum_loss_ij
+							num_i += num_ij
+							j += 1
 
 					total_loss += sum_loss_i / num_i
 				else:

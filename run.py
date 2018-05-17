@@ -128,14 +128,8 @@ with tf.Session(config=sess_config) as sess:
 							sum_loss_i += sum_loss_ij
 							num_i += num_ij
 							j += 1
-							### debug remove later
-							print(sum_loss_ij / num_ij)
-							###
 						else:
 							last_state_j = INIT_STATE_i
-							### debug remove later
-							deco_print('Skip (%d, %d)' %(i,j), end='\r')
-							###
 
 					total_loss += sum_loss_i / num_i
 				else:
@@ -149,9 +143,6 @@ with tf.Session(config=sess_config) as sess:
 					total_loss += loss_i
 
 				if i % FLAGS.summary_frequency == 0:
-					# sm, = sess.run(fetches=[summary_op], feed_dict=feed_dict)
-					# sw.add_summary(sm, global_step=sess.run(model._global_step))
-					# sw.flush()
 					time_last = time.time() - epoch_start
 					time_est = time_last / p
 					deco_print('Training Loss Update: %f, Elapse / Estimate: %.2fs / %.2fs     ' %(total_loss/(i+1), time_last, time_est), end='\r')

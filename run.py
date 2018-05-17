@@ -128,6 +128,9 @@ with tf.Session(config=sess_config) as sess:
 							sum_loss_i += sum_loss_ij
 							num_i += num_ij
 							j += 1
+							### debug remove later
+							print(sum_loss_ij / num_ij)
+							###
 						else:
 							last_state_j = INIT_STATE_i
 							### debug remove later

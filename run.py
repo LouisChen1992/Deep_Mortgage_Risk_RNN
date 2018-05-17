@@ -86,12 +86,17 @@ with tf.Session(config=sess_config) as sess:
 		summary_op = tf.summary.merge_all()
 		sw = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
 
+		if 'TBPTT' in config and config['TBPTT']:
+			train_batch_size = config['global_batch_size'] * 64 // config['TBPTT_num_steps']
+		else:
+			train_batch_size = config['global_batch_size']
+
 		for epoch in range(FLAGS.num_epochs):
 			epoch_start = time.time()
 
 			### SGD step
 			total_loss = 0.0
-			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'], use_effective_length=FLAGS.effective_length)):
+			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=train_batch_size, use_effective_length=FLAGS.effective_length)):
 				if 'TBPTT' in config and config['TBPTT']:
 					sequence_length = X_FF.shape[1]
 					j = 0

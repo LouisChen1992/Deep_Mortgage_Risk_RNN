@@ -18,6 +18,7 @@ tf.flags.DEFINE_string('dataset', 'all', 'Dataset: subprime/prime/all')
 tf.flags.DEFINE_integer('num_epochs', 20, 'Number of training epochs')
 tf.flags.DEFINE_integer('summary_frequency', 100, 'Iterations after which summary takes place')
 tf.flags.DEFINE_boolean('effective_length', False, 'True/False')
+tf.flags.DEFINE_float('gpu_memory_fraction', 0.8, 'GPU Memory Fraction Per Process, <0 if Allow Memory Allocation to Grow')
 FLAGS = tf.flags.FLAGS
 
 ### Load Config File
@@ -71,8 +72,11 @@ elif FLAGS.mode == 'test':
 deco_print('Model Created! ')
 ###
 
-sess_config = tf.ConfigProto(allow_soft_placement=True, 
-	gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.8))
+if FLAGS.gpu_memory_fraction < 0 or FLAGS.gpu_memory_fraction > 1:
+	gpu_options = tf.GPUOptions(allow_growth=True)
+else:
+	gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=FLAGS.gpu_memory_fraction)
+sess_config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
 with tf.Session(config=sess_config) as sess:
 	saver = tf.train.Saver(max_to_keep=50)
 	if tf.train.latest_checkpoint(FLAGS.logdir) is not None:

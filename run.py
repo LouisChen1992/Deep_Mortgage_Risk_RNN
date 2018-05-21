@@ -71,7 +71,8 @@ elif FLAGS.mode == 'test':
 deco_print('Model Created! ')
 ###
 
-sess_config = tf.ConfigProto(allow_soft_placement=True)
+sess_config = tf.ConfigProto(allow_soft_placement=True, 
+	gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.8))
 with tf.Session(config=sess_config) as sess:
 	saver = tf.train.Saver(max_to_keep=50)
 	if tf.train.latest_checkpoint(FLAGS.logdir) is not None:
@@ -199,7 +200,6 @@ with tf.Session(config=sess_config) as sess:
 			deco_print('Did Epoch {} In {} Seconds \n'.format(epoch, epoch_end-epoch_start))
 
 	else:
-		### TODO: This part has not been de-bugged yet. 
 		deco_print('Executing Test Mode...\n')
 
 		time_start = time.time()

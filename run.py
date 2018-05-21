@@ -161,11 +161,20 @@ with tf.Session(config=sess_config) as sess:
 				count_valid = 0
 
 			for i, (X_RNN, X_FF, Y, tDimSplit, bucket, p) in enumerate(dl.iterate_one_epoch(batch_size=config['global_batch_size'])):
-				feed_dict = {
-					model._x_rnn_placeholder:X_RNN, 
-					model._x_ff_placeholder:X_FF,
-					model._y_placeholder:Y, 
-					model._tDimSplit_placeholder:tDimSplit}
+				if 'TBPTT' in config and config['TBPTT']:
+					INIT_STATE = np.zeros(shape=(tDimSplit.shape[0], initial_state_size(config['cell_type'], config['num_units_rnn'], num_layers=config['num_layers_rnn'])), dtype='float32')
+					feed_dict = {
+						model._x_rnn_placeholder:X_RNN, 
+						model._x_ff_placeholder:X_FF,
+						model._y_placeholder:Y, 
+						model._tDimSplit_placeholder:tDimSplit,
+						model._initial_state_placeholder:INIT_STATE}
+				else:
+					feed_dict = {
+						model._x_rnn_placeholder:X_RNN, 
+						model._x_ff_placeholder:X_FF,
+						model._y_placeholder:Y, 
+						model._tDimSplit_placeholder:tDimSplit}
 				if FLAGS.mode == 'train':
 					loss_i, num_i = sess.run(fetches=[model._sum_loss, model._num], feed_dict=feed_dict)
 					total_train_loss += loss_i

@@ -128,9 +128,9 @@ with tf.Session(config=sess_config) as sess:
 							sum_loss_ij, num_ij, _, last_state_j = sess.run(fetches=[model._sum_loss, model._num, model._train_op, model._last_state], feed_dict=feed_dict)
 							sum_loss_i += sum_loss_ij
 							num_i += num_ij
-							j += 1
 						else:
 							last_state_j = INIT_STATE_i
+						j += 1
 
 					total_loss += sum_loss_i / num_i
 				else:

@@ -1,6 +1,6 @@
 {
 	"num_gpus" : 1,
-	"batch_size_per_gpu" : 1024,
+	"batch_size_per_gpu" : 128,
 
 	"feature_dim_rnn" : 291,
 	"feature_dim_ff" : 0,

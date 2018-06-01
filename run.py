@@ -93,6 +93,8 @@ with tf.Session(config=sess_config) as sess:
 
 		if 'TBPTT' in config and config['TBPTT']:
 			train_batch_size = config['global_batch_size'] * 64 // config['TBPTT_num_steps']
+			if not 'TBPTT_zero_initial' in config:
+				config['TBPTT_zero_initial'] = False
 		else:
 			train_batch_size = config['global_batch_size']
 
@@ -112,7 +114,7 @@ with tf.Session(config=sess_config) as sess:
 						X_RNN_j = X_RNN[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps']),:]
 						X_FF_j = X_FF[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps']),:]
 						Y_j = Y[:,j*config['TBPTT_num_steps']:min(sequence_length,(j+1)*config['TBPTT_num_steps'])]
-						if j == 0:
+						if j == 0 or config['TBPTT_zero_initial']:
 							INIT_STATE_j = INIT_STATE_i
 						else:
 							INIT_STATE_j = last_state_j
